@@ -101,7 +101,7 @@ La page lit `donnees/medias.csv` (ou l'onglet **« Médias »** du tableau, une 
 `id` (`yt:` + identifiant YouTube, `libsyn:` + numéro d'épisode, ou un code libre), `date` (`AAAA-MM-JJ`, `AAAA-MM` ou `AAAA`),
 `titre`, `type` (vidéo, podcast…), `source`, `evenement`, `duree` (`34:40`), `langue`, `intervenants` (les autres
 personnes), `url`, `notes`, `masquer`. Une vidéo YouTube s'affiche avec sa vignette ; le lecteur ne se charge qu'au clic
-(sans cookies). La vignette est lue dans `medias/<identifiant>.jpg` si elle y est, sinon chez YouTube.
+(sans cookies). La collecte du lundi enregistre la vignette de chaque nouvelle vidéo dans `medias/<identifiant>.jpg` ; en attendant, elle est lue chez YouTube.
 
 ## Lancer la collecte à la main
 

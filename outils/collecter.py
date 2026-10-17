@@ -25,7 +25,8 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
 - donnees/lieux.csv : position (ville, pays, latitude, longitude) de chaque lieu de conférence, pour les
   cartes ; un lieu nouveau est cherché dans OpenStreetMap (Nominatim). Les lignes existantes, éventuellement
   corrigées à la main, sont conservées ; un lieu introuvable est ajouté sans coordonnées, à compléter à la main ;
-- donnees/medias.csv : copie de l'onglet « Médias » (vidéos et podcasts, remplis à la main) ;
+- donnees/medias.csv : copie de l'onglet « Médias » (vidéos et podcasts, remplis à la main) ; la vignette
+  de chaque vidéo YouTube nouvelle est enregistrée dans medias/ ;
 - donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
   revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
   éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
@@ -778,12 +779,34 @@ def id_onglet_medias():
 
 
 def copie_medias(sheet_id):
-    """Copie de secours de l'onglet « Médias » (rempli à la main) dans donnees/medias.csv."""
+    """Copie de secours de l'onglet « Médias » (rempli à la main) dans donnees/medias.csv, et vignettes des vidéos."""
     gid = id_onglet_medias()
     if sheet_id and gid:
         lignes = lire_tableau(sheet_id, gid, ("id", "titre"))
         if lignes:
             ecrire_csv(lignes, MEDIAS, list(lignes[0].keys()))
+    elif MEDIAS.exists():
+        with MEDIAS.open(newline="", encoding="utf-8") as f:
+            lignes = list(csv.DictReader(f))
+    else:
+        return
+    vignettes_youtube(lignes)
+
+
+def vignettes_youtube(lignes):
+    """Vignette de chaque vidéo YouTube dans medias/<identifiant>.jpg : le site ne la demande pas à YouTube."""
+    dossier = RACINE / "medias"
+    dossier.mkdir(exist_ok=True)
+    for l in lignes:
+        m = re.search(r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([\w-]{11})", l.get("url") or "")
+        if not m or (dossier / f"{m.group(1)}.jpg").exists():
+            continue
+        try:
+            r = get(f"https://i.ytimg.com/vi/{m.group(1)}/mqdefault.jpg")
+            (dossier / f"{m.group(1)}.jpg").write_bytes(r.content)
+            print(f"  vignette : {m.group(1)}.jpg ({l.get('titre', '')[:60]})", file=sys.stderr)
+        except requests.RequestException as e:
+            print(f"  vignette introuvable : {m.group(1)} ({e})", file=sys.stderr)
 
 
 def id_tableau():
@@ -945,6 +968,7 @@ def main():
     toutes.sort(key=lambda f: (-(int(f["annee"]) if f.get("annee", "").isdigit() else 0), f.get("titre", "")))
     ecrire_csv(toutes)
     conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
+    copie_medias(sheet_id)
 
 
 if __name__ == "__main__":
