@@ -45,7 +45,7 @@ Colonnes : `id`, `annee`, `titre`, `auteurs` (séparés par des virgules), `revu
 `ajoute_le` (date d'ajout automatique).
 
 Le `type` est libre ; les types existants : article, étude clinique, revue de la littérature,
-recommandations, éditorial, lettre / commentaire, cas clinique, chapitre de livre, livre,
+recommandations, éditorial, commentaire, cas clinique, chapitre de livre, livre,
 résumé de congrès, avis Faculty Opinions (F1000), dépôt universitaire (DIAL, Lirias), erratum.
 
 ## Lancer la collecte à la main

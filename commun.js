@@ -78,7 +78,7 @@ window.FV = (function () {
   const FAMILLES = [
     [/étude|article/, "article"],
     [/revue|recommandation/, "revue"],
-    [/lettre|éditorial/, "lettre"],
+    [/commentaire|lettre|éditorial/, "lettre"],
     [/cas clinique/, "cas"],
     [/chapitre|livre|thèse/, "livre"],
   ];

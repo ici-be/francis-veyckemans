@@ -111,8 +111,8 @@ TYPES_PUBMED = [  # du plus spécifique au plus général
     ("Guideline", "recommandations"),
     ("Consensus Development Conference", "recommandations"),
     ("Editorial", "éditorial"),
-    ("Comment", "lettre / commentaire"),
-    ("Letter", "lettre / commentaire"),
+    ("Comment", "commentaire"),
+    ("Letter", "commentaire"),
     ("Systematic Review", "revue de la littérature"),
     ("Meta-Analysis", "revue de la littérature"),
     ("Review", "revue de la littérature"),
@@ -183,7 +183,7 @@ def lire_pubmed(art):
 # ---------------------------------------------------------------- OpenAlex
 
 TYPES_OPENALEX = {
-    "review": "revue de la littérature", "editorial": "éditorial", "letter": "lettre / commentaire",
+    "review": "revue de la littérature", "editorial": "éditorial", "letter": "commentaire",
     "erratum": "erratum", "book-chapter": "chapitre de livre", "book": "livre",
     "dissertation": "thèse", "paratext": "erratum", "retraction": "erratum",
 }
