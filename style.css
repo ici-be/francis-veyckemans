@@ -309,7 +309,7 @@ td.revue i { color: var(--encre); font-style: italic; }
 }
 
 /* plus de pied de page : un peu d’air sous le contenu */
-main { padding-bottom: 56px; }
+main.largeur { padding-bottom: 72px; }  /* plus précis que .largeur, qui remet le bas à zéro */
 
 /* téléphone : chaque publication devient une fiche */
 /* page Vidéos et podcasts */
