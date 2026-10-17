@@ -32,10 +32,13 @@
   <main class="largeur page">
     <h1>Lectures commentées</h1>
     <p class="intro" id="intro">Articles recommandés et commentés pour Faculty Opinions (F1000).</p>
-    <label class="champ recherche seul">
-      <span>Rechercher</span>
-      <input type="search" id="recherche" placeholder="titre, auteur, revue…" autocomplete="off">
-    </label>
+    <section class="filtres" aria-label="Filtres">
+      <label class="champ recherche">
+        <span>Rechercher</span>
+        <input type="search" id="recherche" placeholder="titre, auteur, revue…" autocomplete="off">
+      </label>
+    </section>
+    <div id="themes-lectures" class="sommaire themes-pastilles" role="group" aria-label="Thèmes"></div>
     <p class="compte" id="compte" aria-live="polite">Chargement…</p>
     <div id="lectures"></div>
   </main>

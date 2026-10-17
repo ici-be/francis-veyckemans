@@ -156,6 +156,47 @@ window.I18N = (function () {
 
     // maladies rares
     "À savoir": "Good to know",
+    "Fiches-repères & syndromes emblématiques": "Key reference sheets & emblematic syndromes",
+    "Sélection de pathologies fréquemment rencontrées ou à haut risque anesthésique pédiatrique, reliées aux fiches de la base UCLouvain et aux travaux de Francis Veyckemans.":
+      "Selection of conditions frequently encountered or carrying high paediatric anaesthetic risk, linked to the UCLouvain database records and Francis Veyckemans's work.",
+    "Rechercher un syndrome ou filtrer les fiches ci-dessous": "Search a syndrome or filter the cards below",
+    "Pierre Robin, Duchenne, hyperthermie maligne, Marfan…": "Pierre Robin, Duchenne, malignant hyperthermia, Marfan…",
+    "Tous": "All",
+    "Fiche UCLouvain (FR) ↗": "UCLouvain record (FR) ↗",
+    "Fiche UCLouvain (EN) ↗": "UCLouvain record (EN) ↗",
+    "Publications & conférences sur ce syndrome →": "Publications & presentations on this syndrome →",
+    "Chercher « {q} » dans les publications →": "Search “{q}” in publications →",
+    "Ouvrir l'index alphabétique complet sur UCLouvain ↗": "Open the full alphabetical index on UCLouvain ↗",
+    "Voies aériennes": "Airway",
+    "Neuromusculaire": "Neuromuscular",
+    "Urgence métabolique": "Metabolic emergency",
+    "Métabolique & voies aériennes": "Metabolic & airway",
+    "Cardiopathie & tissus conjonctifs": "Heart & connective tissue",
+    "Syndromes malformatifs": "Malformation syndromes",
+
+    // résumé, recherche globale et thème
+    "Résumé": "Abstract",
+    "Masquer le résumé": "Hide abstract",
+    "Contexte": "Background",
+    "Objectif": "Objective",
+    "Objectifs": "Objectives",
+    "Méthodes": "Methods",
+    "Résultats": "Results",
+    "Conclusion": "Conclusion",
+    "Conclusions": "Conclusions",
+    "Discussion": "Discussion",
+    "Introduction": "Introduction",
+    "Résumé de l'article": "Article abstract",
+    "Rechercher dans tout le site": "Search across the entire site",
+    "Rechercher dans toutes les archives…": "Search across all archives…",
+    "Tapez un mot-clé (ex. curare, intubation, APRICOT, Pierre Robin, Lille…)":
+      "Type a keyword (e.g. neuromuscular, intubation, APRICOT, Pierre Robin, Lille…)",
+    "Aucun résultat dans les archives pour « {q} ».": "No results in the archive for “{q}”.",
+    "Fermer": "Close",
+    "Échap": "Esc",
+    "Thème sombre": "Dark theme",
+    "Thème clair": "Light theme",
+    "Tous les thèmes": "All themes",
 
     // types de publications, de conférences et de médias
     "article": "article",
@@ -207,6 +248,7 @@ window.I18N = (function () {
     publication: ["publication", "publications"], citation: ["citation", "citations"], article: ["article", "articles"],
     lecture: ["review", "reviews"], coauteur: ["co-author", "co-authors"], intervention: ["presentation", "presentations"],
     lien: ["link", "links"], "vidéo": ["video", "videos"], podcast: ["podcast", "podcasts"],
+    syndrome: ["syndrome", "syndromes"],
   };
 
   // blocs de texte avec liens ou mise en forme : l'élément porte data-t="clé"
@@ -257,6 +299,17 @@ window.I18N = (function () {
     return location.pathname + (s ? "?" + s : "") + location.hash;
   }
 
+  // thème clair / sombre : mémorisé dans localStorage, sinon préférence du système
+  function themeActuel() {
+    const f = document.documentElement.getAttribute("data-theme");
+    if (f === "dark" || f === "light") return f;
+    return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  try {
+    const pref = localStorage.getItem("fv-theme");
+    if (pref === "dark" || pref === "light") document.documentElement.setAttribute("data-theme", pref);
+  } catch (e) {}
+
   // ---------------------------------------------------------------- pages
 
   const ATTRIBUTS = ["placeholder", "aria-label", "title", "content"];
@@ -277,9 +330,45 @@ window.I18N = (function () {
       }));
       internes(document).forEach((a) => a.setAttribute("href", lien(a.getAttribute("href"))));
     }
-    // choix de la langue, en haut à droite : FR | EN, la langue active mise en évidence
+    // barre d'outils en haut à droite : recherche globale (⌘K), thème clair/sombre, et choix de la langue FR | EN
     const nom = document.querySelector(".entete .nom");
     if (nom) {
+      const outils = document.createElement("div");
+      outils.className = "outils-entete";
+
+      // bouton Recherche transversale (⌘K)
+      const btnRech = document.createElement("button");
+      btnRech.type = "button";
+      btnRech.className = "outil-recherche";
+      btnRech.id = "ouvrir-recherche";
+      btnRech.title = t("Rechercher dans tout le site") + " (Ctrl+K / ⌘K)";
+      btnRech.setAttribute("aria-label", t("Rechercher dans tout le site"));
+      btnRech.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>${t("Rechercher")}</span><kbd>⌘K</kbd>`;
+      outils.appendChild(btnRech);
+
+      // bouton Thème clair / sombre
+      const btnTheme = document.createElement("button");
+      btnTheme.type = "button";
+      btnTheme.className = "outil-theme";
+      const majBoutonTheme = () => {
+        const sombre = themeActuel() === "dark";
+        const label = sombre ? t("Thème clair") : t("Thème sombre");
+        btnTheme.title = label;
+        btnTheme.setAttribute("aria-label", label);
+        btnTheme.innerHTML = sombre
+          ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+          : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+      };
+      majBoutonTheme();
+      btnTheme.addEventListener("click", () => {
+        const nouveau = themeActuel() === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nouveau);
+        try { localStorage.setItem("fv-theme", nouveau); } catch (e) {}
+        majBoutonTheme();
+      });
+      outils.appendChild(btnTheme);
+
+      // choix de la langue : FR | EN
       const choix = document.createElement("span");
       choix.className = "langue";
       choix.setAttribute("role", "group");
@@ -300,7 +389,8 @@ window.I18N = (function () {
         }
         choix.appendChild(b);
       });
-      nom.appendChild(choix);
+      outils.appendChild(choix);
+      nom.appendChild(outils);
     }
     document.documentElement.classList.remove("traduction");
   }

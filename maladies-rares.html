@@ -51,6 +51,22 @@
       </a>
     </div>
 
+    <section class="mr-explorateur cadre" aria-label="Fiches-repères &amp; syndromes emblématiques">
+      <div class="mr-explorateur-tete">
+        <h2>Fiches-repères &amp; syndromes emblématiques</h2>
+        <p class="mr-sous-intro">Sélection de pathologies fréquemment rencontrées ou à haut risque anesthésique pédiatrique, reliées aux fiches de la base UCLouvain et aux travaux de Francis Veyckemans.</p>
+      </div>
+      <div class="mr-barre">
+        <label class="champ recherche">
+          <span>Rechercher un syndrome ou filtrer les fiches ci-dessous</span>
+          <input type="search" id="mr-recherche" placeholder="Pierre Robin, Duchenne, hyperthermie maligne, Marfan…" autocomplete="off">
+        </label>
+      </div>
+      <div id="mr-lettres" class="mr-lettres" role="group" aria-label="Index alphabétique"></div>
+      <div id="mr-fiches" class="mr-grille"></div>
+      <div id="mr-lien-recherche" class="mr-lien-recherche" hidden></div>
+    </section>
+
     <section class="mr-notes">
       <h2>À savoir</h2>
       <ul data-t="mr-notes">
@@ -66,5 +82,9 @@
     </section>
   </main>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="config.js"></script>
+  <script src="commun.js"></script>
+  <script src="maladies-rares.js"></script>
 </body>
 </html>

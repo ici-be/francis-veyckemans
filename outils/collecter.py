@@ -64,6 +64,7 @@ LECTURES = RACINE / "donnees" / "lectures.csv"
 CONFERENCES = RACINE / "donnees" / "conferences.csv"
 LIEUX = RACINE / "donnees" / "lieux.csv"
 MEDIAS = RACINE / "donnees" / "medias.csv"
+RESUMES = RACINE / "donnees" / "resumes.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -179,6 +180,12 @@ def lire_pubmed(art):
     type_ = next((nom for cle, nom in TYPES_PUBMED if cle in types), "article")
     ids = {i.get("IdType"): i.text for i in art.iterfind(".//PubmedData/ArticleIdList/ArticleId")}
     titre = nettoyer(txt(".//ArticleTitle")) or nettoyer(txt(".//VernacularTitle"))
+    parties = []
+    for ab in art.iterfind(".//Abstract/AbstractText"):
+        t_ab = re.sub(r"\s+", " ", "".join(ab.itertext())).strip()
+        if t_ab:
+            etiquette = (ab.get("Label") or "").strip().rstrip(":")
+            parties.append(f"{etiquette} : {t_ab}" if etiquette and etiquette.upper() != "UNLABELLED" else t_ab)
     return {
         "annee": annee,
         "titre": titre.strip("[]"),  # PubMed met entre crochets les titres traduits
@@ -192,6 +199,7 @@ def lire_pubmed(art):
         "doi": norm_doi(ids.get("doi")),
         "pmid": ids.get("pubmed") or art.findtext(".//PMID") or "",
         "pmcid": ids.get("pmc") or "",
+        "_resume": "\n\n".join(parties),
         "_noms": noms,
         "_source": "PubMed",
     }
@@ -226,6 +234,18 @@ def openalex():
             page += 1
     print(f"OpenAlex : {len(resultats)} entrées", file=sys.stderr)
     return resultats
+
+
+def resume_openalex(inv):
+    if not inv or not isinstance(inv, dict):
+        return ""
+    mots = {}
+    for mot, pos in inv.items():
+        for p in pos:
+            mots[p] = mot
+    texte = " ".join(mots[k] for k in sorted(mots))
+    texte = re.sub(r"^abstract[\s.:—-]*", "", texte, flags=re.I).strip()
+    return re.sub(r"\s+", " ", texte)
 
 
 def lire_openalex(w):
@@ -273,6 +293,7 @@ def lire_openalex(w):
         "_page": loc.get("landing_page_url") or "",
         "_citations": w.get("cited_by_count"),
         "_openalex": (w.get("id") or "").rsplit("/", 1)[-1],  # « W2741809807 »
+        "_resume": resume_openalex(w.get("abstract_inverted_index")),
         "_affiches": [a["author"].get("display_name") or "" for a in w.get("authorships", [])],
         "_source": "OpenAlex",
     }
@@ -484,6 +505,26 @@ def ecrire_citations(paires):
         w.writerow(["id", "citations", "openalex"])
         w.writerows([i, n, "|".join(sorted(fiches.get(i, [])))] for i, n in sorted(compte.items()))
     print(f"Écrit : {CITATIONS.relative_to(RACINE)} ({len(compte)} lignes)", file=sys.stderr)
+
+
+def ecrire_resumes(paires):
+    """Résumé (abstract) de chaque publication d'après PubMed (prioritaire, structuré) sinon OpenAlex."""
+    resumes = {}
+    if RESUMES.exists():
+        with RESUMES.open(newline="", encoding="utf-8") as f:
+            resumes = {l["id"]: l["resume"] for l in csv.DictReader(f) if l.get("id") and l.get("resume")}
+    for fiche, r in paires:
+        id_ = fiche.get("id")
+        texte = (r.get("_resume") or "").strip()
+        if not id_ or not texte:
+            continue
+        if id_ not in resumes or (r.get("_source") == "PubMed" and "\n\n" in texte and "\n\n" not in resumes[id_]):
+            resumes[id_] = texte
+    with RESUMES.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "resume"])
+        w.writerows(sorted(resumes.items()))
+    print(f"Écrit : {RESUMES.relative_to(RACINE)} ({len(resumes)} lignes)", file=sys.stderr)
 
 
 def simple(texte):
@@ -962,6 +1003,7 @@ def main():
         return
 
     ecrire_citations(paires)
+    ecrire_resumes(paires)
     ecrire_coauteurs(index.fiches, trouvees)
     ecrire_lectures(index.fiches)
     if annexes:

@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const { $, sansAccents, echapper, estLui, estAvis, pluriel, famille, revueHTML, citationsHTML, liensHTML } = FV;
+  const { $, sansAccents, echapper, estLui, estAvis, pluriel, famille, revueHTML, citationsHTML, liensHTML, surligner } = FV;
   const { t, valeur } = I18N;
   const champs = { recherche: $("#recherche"), type: $("#type"), pdf: $("#pdf") };
   const corps = $("#tableau tbody");
@@ -144,11 +144,12 @@
       corps.innerHTML = `<tr><td colspan="6" class="vide">${t("Aucune publication ne correspond à ces critères.")}</td></tr>`;
       return;
     }
+    const mots = champs.recherche.value.trim().split(/\s+/).filter(Boolean);
     corps.innerHTML = liste.map((p) => `
       <tr>
         <td class="annee">${echapper(p.annee) || "—"}</td>
         <td class="titre-cell cite-ici">
-          <div class="titre">${echapper(p.titre)}</div>
+          <div class="titre">${surligner(p.titre, mots)}</div>
           <div class="auteurs">${auteursHTML(p)}</div>
           ${p.notes && !/automatiquement/.test(p.notes) ? `<div class="note">${echapper(p.notes)}</div>` : ""}
         </td>

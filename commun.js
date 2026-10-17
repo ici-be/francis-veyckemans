@@ -42,37 +42,45 @@ window.FV = (function () {
   const annexe = (chemin) => fetch(chemin, { cache: "no-cache" }).then((r) => (r.ok ? r.text() : "")).catch(() => "");
 
   function charger() {
-    return Promise.all([telechargerPublications(), annexe("donnees/citations.csv"), annexe("donnees/coauteurs.csv")])
-      .then(([publications, citations, coauteurs]) => {
-        const nbCitations = {}, fichesOpenAlex = {};
-        lireCSV(citations).forEach((l) => {
-          nbCitations[l.id] = parseInt(l.citations, 10);
-          fichesOpenAlex[l.id] = l.openalex || "";
-        });
-        const alias = {};
-        lireCSV(coauteurs).forEach((l) => l.alias && l.nom && (alias[l.alias.trim()] = l.nom.trim()));
-        const nomComplet = (n) => {
-          for (let i = 0; i < 4 && alias[n] && alias[n] !== n; i++) n = alias[n];
-          return n;
-        };
-        return lireCSV(publications)
-          .filter((p) => p.id || p.titre)
-          .filter((p) => !oui(p.masquer))
-          .map((p) => preparer(p, nbCitations, fichesOpenAlex, nomComplet));
+    return Promise.all([
+      telechargerPublications(),
+      annexe("donnees/citations.csv"),
+      annexe("donnees/coauteurs.csv"),
+      annexe("donnees/resumes.csv"),
+    ]).then(([publications, citations, coauteurs, resumes]) => {
+      const nbCitations = {}, fichesOpenAlex = {}, textesResumes = {};
+      lireCSV(citations).forEach((l) => {
+        nbCitations[l.id] = parseInt(l.citations, 10);
+        fichesOpenAlex[l.id] = l.openalex || "";
       });
+      lireCSV(resumes).forEach((l) => {
+        if (l.id && l.resume) textesResumes[l.id] = l.resume.trim();
+      });
+      const alias = {};
+      lireCSV(coauteurs).forEach((l) => l.alias && l.nom && (alias[l.alias.trim()] = l.nom.trim()));
+      const nomComplet = (n) => {
+        for (let i = 0; i < 4 && alias[n] && alias[n] !== n; i++) n = alias[n];
+        return n;
+      };
+      return lireCSV(publications)
+        .filter((p) => p.id || p.titre)
+        .filter((p) => !oui(p.masquer))
+        .map((p) => preparer(p, nbCitations, fichesOpenAlex, textesResumes, nomComplet));
+    });
   }
 
-  function preparer(p, nbCitations, fichesOpenAlex, nomComplet) {
+  function preparer(p, nbCitations, fichesOpenAlex, textesResumes, nomComplet) {
     const auteurs = (p.auteurs || "").split(/\s*,\s*/).filter(Boolean);
     p._auteurs = auteurs;
     p._noms = [...new Set(auteurs.map(nomComplet))].filter((n) => n !== "-");  // « - » dans coauteurs.csv : pas une personne
     p._annee = parseInt(p.annee, 10) || 0;
     p._citations = Number.isFinite(nbCitations[p.id]) ? nbCitations[p.id] : null;
     p._openalex = fichesOpenAlex[p.id] || "";  // « W123 » ou « W123|W456 » si l'article a plusieurs fiches OpenAlex
+    p._resume = textesResumes[p.id] || "";
     p.type = p.type || "article";
     if (p.pdf_drive) p.lien_pdf = p.pdf_drive;  // PDF déposé dans le dossier Google Drive : prioritaire
     p._titre = estAvis(p) ? p.titre.replace(/^Faculty Opinions recommendation of\s*/i, "") : p.titre;
-    p._texte = sansAccents([p.titre, p.auteurs, p._noms.join(" "), p.revue, p.annee, p.type, I18N.valeur(p.type), p.notes, p.doi, p.pmid].join(" "));
+    p._texte = sansAccents([p.titre, p.auteurs, p._noms.join(" "), p.revue, p.annee, p.type, I18N.valeur(p.type), p.notes, p.doi, p.pmid, p._resume].join(" "));
     return p;
   }
 
@@ -115,8 +123,49 @@ window.FV = (function () {
     }
     if (p.pmid && !/pubmed/.test(p.lien_info || ""))
       l.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(p.pmid)}/" target="_blank" rel="noopener">PubMed</a>`);
+    if (p._resume && !estAvis(p))
+      l.push(`<button type="button" class="resumer" data-id="${echapper(p.id)}" aria-expanded="false">${t("Résumé")}</button>`);
     if (!estAvis(p)) l.push(`<button type="button" class="citer" data-id="${echapper(p.id)}" aria-expanded="false">${t("Citer")}</button>`);
     return `<div class="liens">${l.join("")}</div>`;
+  }
+
+  // ---------------------------------------------------------------- résumé (abstract) et surlignage
+
+  const LABELS_RESUME = {
+    BACKGROUND: "Contexte", CONTEXT: "Contexte", INTRODUCTION: "Introduction",
+    OBJECTIVE: "Objectif", OBJECTIVES: "Objectifs", AIM: "Objectif", AIMS: "Objectifs", PURPOSE: "Objectif",
+    METHODS: "Méthodes", METHOD: "Méthodes", "MATERIAL AND METHODS": "Méthodes", "MATERIALS AND METHODS": "Méthodes", "PATIENTS AND METHODS": "Méthodes",
+    RESULTS: "Résultats", FINDINGS: "Résultats",
+    CONCLUSION: "Conclusion", CONCLUSIONS: "Conclusions", DISCUSSION: "Discussion", SUMMARY: "Résumé",
+  };
+
+  function surligner(texte, mots) {
+    let html = echapper(texte);
+    const valides = (mots || []).map((m) => sansAccents(m)).filter((m) => m.length >= 2);
+    if (!valides.length) return html;
+    // surlignage insensible aux accents sur le texte échappé
+    return html.replace(/([a-zA-ZÀ-ÖØ-öø-ÿ0-9-]+)/g, (mot) => {
+      const norm = sansAccents(mot);
+      return valides.some((m) => norm.includes(m)) ? `<mark>${mot}</mark>` : mot;
+    });
+  }
+
+  function panneauResume(p) {
+    const champ = $("#recherche");
+    const mots = champ && champ.value ? champ.value.trim().split(/\s+/) : [];
+    const blocs = (p._resume || "").split(/\n\n+/).map((b) => b.trim()).filter(Boolean);
+    const htmlBlocs = blocs.map((b) => {
+      const m = /^([A-Z][A-Z\s/&-]{2,26})\s*:\s*(.+)$/s.exec(b);
+      if (m) {
+        const cle = m[1].trim().toUpperCase();
+        const etiq = LABELS_RESUME[cle] ? t(LABELS_RESUME[cle]) : m[1].trim();
+        return `<div class="resume-ligne"><span class="resume-etiq">${echapper(etiq)}</span><p>${surligner(m[2], mots)}</p></div>`;
+      }
+      return `<p class="resume-para">${surligner(b, mots)}</p>`;
+    }).join("");
+    return `<div class="resume-panneau" data-id="${echapper(p.id)}" role="region" aria-label="${t("Résumé de l'article")}">
+      ${htmlBlocs}
+    </div>`;
   }
 
   // ---------------------------------------------------------------- citer et exporter
@@ -177,11 +226,22 @@ window.FV = (function () {
       <pre>${echapper(FORMATS[formatChoisi](p))}</pre></div>`;
   }
 
-  // un clic sur « Citer » ouvre le panneau sous la publication ; trouver(id) rend la publication
+  // un clic sur « Citer » ou « Résumé » ouvre le panneau correspondant sous la publication
   function activerCiter(conteneur, trouver) {
     conteneur.addEventListener("click", (e) => {
-      const b = e.target.closest(".citer, .format, .copier");
+      const b = e.target.closest(".resumer, .citer, .format, .copier");
       if (!b) return;
+      if (b.classList.contains("resumer")) {
+        const lieu = b.closest(".cite-ici") || b.closest("tr, li").querySelector(".cite-ici");
+        const ouvert = lieu.querySelector(".resume-panneau");
+        if (ouvert) ouvert.remove();
+        b.setAttribute("aria-expanded", String(!ouvert));
+        if (!ouvert) {
+          const p = trouver(b.dataset.id);
+          if (p) lieu.insertAdjacentHTML("beforeend", panneauResume(p));
+        }
+        return;
+      }
       if (b.classList.contains("citer")) {
         // le panneau va dans l'élément .cite-ici de la publication (ancêtre du bouton, ou autre cellule de la même ligne)
         const lieu = b.closest(".cite-ici") || b.closest("tr, li").querySelector(".cite-ici");
@@ -213,5 +273,185 @@ window.FV = (function () {
     URL.revokeObjectURL(lien.href);
   }
 
-  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, famille, revueHTML, citationsHTML, liensHTML, activerCiter, exporter };
+  // ---------------------------------------------------------------- recherche transversale (⌘K)
+
+  let cacheGlobal = null;
+  function chargerTout() {
+    if (cacheGlobal) return cacheGlobal;
+    cacheGlobal = Promise.all([
+      charger().catch(() => []),
+      annexe("donnees/lectures.csv"),
+      annexe("donnees/conferences.csv"),
+      annexe("donnees/medias.csv"),
+    ]).then(([pubs, txtLectures, txtConf, txtMedias]) => {
+      const commentes = {};
+      lireCSV(txtLectures).forEach((l) => (commentes[l.id] = l));
+      const publications = pubs.filter((p) => !estAvis(p));
+      const lectures = pubs.filter(estAvis).map((p) => {
+        const c = commentes[p.id] || {};
+        p._ref = [c.auteurs, c.revue, c.annee].filter(Boolean).join(", ");
+        p._texte = sansAccents([p._titre, p._ref].join(" "));
+        return p;
+      });
+      const parCoauteur = {};
+      publications.forEach((p) => coauteurs(p).forEach((nom) => {
+        const g = (parCoauteur[nom] = parCoauteur[nom] || { nom, n: 0, de: Infinity, a: 0, _texte: sansAccents(nom) });
+        g.n++;
+        if (p._annee) { g.de = Math.min(g.de, p._annee); g.a = Math.max(g.a, p._annee); }
+      }));
+      const listeCoauteurs = Object.values(parCoauteur).sort((a, b) => b.n - a.n);
+      const conferences = lireCSV(txtConf)
+        .filter((c) => (c.id || c.titre) && !oui(c.masquer) && !(CONF.typesConferencesCaches || []).includes((c.type || "").trim()))
+        .map((c) => ({ ...c, _texte: sansAccents([c.titre, c.congres, c.lieu, c.date, c.orateurs].join(" ")) }));
+      const medias = lireCSV(txtMedias)
+        .filter((m) => (m.id || m.titre) && !oui(m.masquer))
+        .map((m) => ({ ...m, _texte: sansAccents([m.titre, m.evenement, m.source, m.intervenants, m.date].join(" ")) }));
+      return { publications, lectures, coauteurs: listeCoauteurs, conferences, medias };
+    });
+    return cacheGlobal;
+  }
+
+  function initialiserRechercheGlobale() {
+    let dialogue = null;
+    function ouvrir() {
+      if (!dialogue) {
+        dialogue = document.createElement("div");
+        dialogue.className = "cmdk-fond";
+        dialogue.setAttribute("role", "dialog");
+        dialogue.setAttribute("aria-modal", "true");
+        dialogue.setAttribute("aria-label", t("Rechercher dans tout le site"));
+        dialogue.innerHTML = `
+          <div class="cmdk-boite cadre">
+            <div class="cmdk-entete">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="search" id="cmdk-champ" placeholder="${echapper(t("Rechercher dans toutes les archives…"))}" autocomplete="off">
+              <button type="button" class="cmdk-fermer" title="${echapper(t("Fermer"))}">${echapper(t("Échap"))}</button>
+            </div>
+            <div class="cmdk-corps" id="cmdk-corps">
+              <p class="cmdk-aide">${echapper(t("Tapez un mot-clé (ex. curare, intubation, APRICOT, Pierre Robin, Lille…)"))}</p>
+            </div>
+          </div>`;
+        document.body.appendChild(dialogue);
+        const champ = dialogue.querySelector("#cmdk-champ");
+        const corps = dialogue.querySelector("#cmdk-corps");
+        dialogue.addEventListener("click", (e) => {
+          if (e.target === dialogue || e.target.closest(".cmdk-fermer")) fermer();
+        });
+        let attente;
+        champ.addEventListener("input", () => {
+          clearTimeout(attente);
+          attente = setTimeout(() => chercher(champ.value, corps), 100);
+        });
+      }
+      dialogue.hidden = false;
+      const champ = dialogue.querySelector("#cmdk-champ");
+      champ.focus();
+      champ.select();
+      chargerTout();
+    }
+
+    function fermer() {
+      if (dialogue) dialogue.hidden = true;
+    }
+
+    function chercher(requete, conteneur) {
+      const q = requete.trim();
+      const mots = sansAccents(q).split(/\s+/).filter(Boolean);
+      if (!mots.length) {
+        conteneur.innerHTML = `<p class="cmdk-aide">${echapper(t("Tapez un mot-clé (ex. curare, intubation, APRICOT, Pierre Robin, Lille…)"))}</p>`;
+        return;
+      }
+      chargerTout().then((d) => {
+        const filtre = (liste) => liste.filter((x) => mots.every((m) => x._texte.includes(m)));
+        const pubs = filtre(d.publications);
+        const lects = filtre(d.lectures);
+        const confs = filtre(d.conferences);
+        const meds = filtre(d.medias);
+        const coauts = filtre(d.coauteurs);
+
+        const groupes = [];
+        if (pubs.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Publications"))} (${pubs.length})</span><a href="${I18N.lien("./?q=" + encodeURIComponent(q))}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste">${pubs.slice(0, 5).map((p) => `
+                <li><a href="${I18N.lien("./?q=" + encodeURIComponent(p.doi || p.titre.slice(0, 45)))}">
+                  <span class="cmdk-item-titre">${surligner(p.titre, mots)}</span>
+                  <span class="cmdk-item-meta">${echapper(p.annee || "")}${p.revue ? " · " + echapper(p.revue) : ""}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+        if (lects.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Lectures commentées"))} (${lects.length})</span><a href="${I18N.lien("lectures.html?q=" + encodeURIComponent(q))}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste">${lects.slice(0, 3).map((p) => `
+                <li><a href="${I18N.lien("lectures.html?q=" + encodeURIComponent(p._titre.slice(0, 40)))}">
+                  <span class="cmdk-item-titre">${surligner(p._titre, mots)}</span>
+                  <span class="cmdk-item-meta">${echapper(p.annee || "")}${p._ref ? " · " + echapper(p._ref) : ""}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+        if (confs.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Conférences"))} (${confs.length})</span><a href="${I18N.lien("conferences.html?q=" + encodeURIComponent(q))}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste">${confs.slice(0, 3).map((c) => `
+                <li><a href="${I18N.lien("conferences.html?q=" + encodeURIComponent(c.titre.slice(0, 40)))}">
+                  <span class="cmdk-item-titre">${surligner(c.titre, mots)}</span>
+                  <span class="cmdk-item-meta">${echapper((c.date || "").slice(0, 4))}${c.lieu ? " · " + echapper(c.lieu) : ""}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+        if (meds.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Vidéos et podcasts"))} (${meds.length})</span><a href="${I18N.lien("medias.html")}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste">${meds.slice(0, 3).map((m) => `
+                <li><a href="${I18N.lien("medias.html")}">
+                  <span class="cmdk-item-titre">${surligner(m.titre, mots)}</span>
+                  <span class="cmdk-item-meta">${echapper(m.evenement || m.source || "")} · ${echapper((m.date || "").slice(0, 4))}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+        if (coauts.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Coauteurs"))} (${coauts.length})</span><a href="${I18N.lien("coauteurs.html")}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste cmdk-coauteurs">${coauts.slice(0, 6).map((g) => `
+                <li><a href="${I18N.lien("./?coauteur=" + encodeURIComponent(g.nom))}">
+                  <span class="cmdk-item-titre">${surligner(g.nom, mots)}</span>
+                  <span class="cmdk-item-meta">${pluriel(g.n, "publication")}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+
+        conteneur.innerHTML = groupes.length
+          ? groupes.join("")
+          : `<p class="cmdk-aide">${echapper(t("Aucun résultat dans les archives pour « {q} ».", { q }))}</p>`;
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("#ouvrir-recherche")) ouvrir();
+    });
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (dialogue && !dialogue.hidden) fermer(); else ouvrir();
+      } else if (e.key === "Escape" && dialogue && !dialogue.hidden) {
+        fermer();
+      }
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialiserRechercheGlobale);
+  else initialiserRechercheGlobale();
+
+  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, famille, revueHTML, citationsHTML, liensHTML, surligner, activerCiter, exporter };
 })();
