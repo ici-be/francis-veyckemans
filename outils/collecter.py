@@ -65,6 +65,7 @@ CONFERENCES = RACINE / "donnees" / "conferences.csv"
 LIEUX = RACINE / "donnees" / "lieux.csv"
 MEDIAS = RACINE / "donnees" / "medias.csv"
 RESUMES = RACINE / "donnees" / "resumes.csv"
+MALADIES_RARES = RACINE / "donnees" / "maladies_rares.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -623,6 +624,120 @@ def ecrire_lectures(fiches):
     print(f"Écrit : {LECTURES.relative_to(RACINE)} ({len(lignes)} lignes, {len(a_chercher)} nouvelle(s))", file=sys.stderr)
 
 
+# ---------------------------------------------------------------- maladies rares (base UCLouvain)
+
+CATEGORIES_MR = [
+    ("Neuromusculaire", [
+        "myopath", "dystrophie musculaire", "muscular dystrophy", "myotoni", "myasthen", "neuropath",
+        "amyotroph", "charcot-marie", "guillain", "rhabdomyolys", "succinylcholine", "dantrolen",
+        "hyperthermie maligne", "malignant hyperthermia", "nemaline", "central core", "multiminicore",
+    ]),
+    ("Voies aériennes", [
+        "intubation difficile", "difficult intubation", "laryngoscop", "retrognath", "micrognath",
+        "glossoptos", "macrogloss", "craniostenos", "craniosynostos", "choan", "fente palatine",
+        "cleft palate", "tracheomalac", "laryngomalac", "pierre robin", "pierre-robin", "treacher",
+        "goldenhar", "ouverture de bouche", "mouth opening", "dysostose mandibulo", "subglottic", "sous-glottique",
+    ]),
+    ("Métabolique & endocrinien", [
+        "acidurie", "aciduria", "acidemie", "acidemia", "glycogenos", "mucopolysacchar", "mitochondri",
+        "peroxysom", "lysosom", "cycle de l'uree", "urea cycle", "carnitin", "hypoglycemi", "galactos",
+        "phenylceton", "porphyri", "thyroid", "surrenal", "adrenal", "diabet", "hyperinsulin",
+        "deficit en", "deficiency", "lipodystroph", "mucolipidos", "gangliosidos", "sphingolipidos",
+    ]),
+    ("Cardiopathie & vasculaire", [
+        "cardiopath", "cardiomyopath", "tetralogie", "fallot", "aort", "valvul", "arythm", "arrhythm",
+        "qt long", "long qt", "brugada", "wolff-parkinson", "conduction", "hypertension arterielle pulmonaire",
+        "pulmonary hypertension", "pericard", "coronair", "coronary", "malformation vasculaire", "angiom", "anevrism",
+    ]),
+    ("Hématologie & immunité", [
+        "anemie", "anemia", "thrombopen", "thrombocytopen", "coagul", "hemophil", "haemophil", "willebrand",
+        "plaquett", "platelet", "neutropen", "immunodefic", "lymphom", "leucem", "pancytopen", "hemolys",
+        "drepanocyt", "sickle cell", "thalassem", "mastocytos", "histiocytos",
+    ]),
+    ("Squelette & tissus conjonctifs", [
+        "osteogen", "osteopetros", "chondrodysplas", "achondroplas", "squelett", "scolios", "arthrogrypos",
+        "ehlers-danlos", "marfan", "cutis laxa", "nanisme", "dwarfism", "dysplasie spondylo", "spondyloepiphys",
+        "camptodactyl", "syndactyl", "klippel-feil", "synostos", "acrocephal",
+    ]),
+    ("Dermatologie & muqueuses", [
+        "epidermolys", "ichtyos", "ichthyos", "bulleus", "bullosa", "keratos", "dysplasie ectodermique",
+        "ectodermal dysplasia", "albinism", "xeroderma", "incontinentia pigmenti", "cutane",
+    ]),
+    ("Neurologie & épilepsie", [
+        "epileps", "convuls", "seizure", "ataxi", "leucodystroph", "leukodystroph", "encephalopath",
+        "microcephal", "hydrocephal", "spastic", "autism", "hypotonie", "hypotonia", "lissencephal", "joubert",
+    ]),
+    ("Rein, foie & digestif", [
+        "hepat", "biliair", "biliary", "cirrhos", "cholestas", "renal", "nephro", "tubulopath",
+        "oesophag", "esophag", "hirschsprung", "intestin", "enteropath", "polykystose",
+    ]),
+]
+
+
+def categoriser_mr(titre, extrait, mots_cles):
+    t_norm = simple(titre)
+    corps = (mots_cles or "").split("[$XTITLE$]")[0]
+    c_norm = simple(f"{extrait} {corps}")
+    meilleure, max_score = "Syndrome malformatif", 0
+    for cat, termes in CATEGORIES_MR:
+        score = sum(4 for w in termes if w in t_norm) + sum(1 for w in termes if w in c_norm)
+        if score > max_score:
+            max_score, meilleure = score, cat
+    return meilleure, max_score
+
+
+def ecrire_maladies_rares():
+    """Récupère l'intégralité des fiches FR et EN de la base UCLouvain (MRP / MRP_ENG) et les catégorise."""
+    import html as html_mod
+    lignes = []
+    for code, dossier in [("fr", "MRP"), ("en", "MRP_ENG")]:
+        try:
+            r = get(f"https://sites.uclouvain.be/anesthweekly/{dossier}/FHSearch.js")
+            r.encoding = "utf-8"
+        except requests.RequestException as e:
+            print(f"  maladies rares ({code}) injoignable : {e}", file=sys.stderr)
+            continue
+        brutes, par_titre = [], {}
+        for entree in re.findall(r's\[\d+\] = "(.*?)";', r.text):
+            parts = entree.split("^")
+            if len(parts) < 2:
+                continue
+            slug = parts[1].replace(".html", "").strip()
+            if not slug or slug.startswith("_") or slug == "AVERTISSEMENT":
+                continue
+            titre = re.sub(r"\s+", " ", html_mod.unescape(parts[0])).strip()
+            extrait = html_mod.unescape(parts[2]) if len(parts) > 2 else ""
+            mots_cles = html_mod.unescape(parts[4]) if len(parts) > 4 else ""
+            cat, score = categoriser_mr(titre, extrait, mots_cles)
+            corps = mots_cles.split("[$XTITLE$]")[0]
+            renvoi = ""
+            if len(corps) < 160:
+                m = re.search(r"(?:^|\b)(?:voir|see|go to)\s*:?\s*(.+?)(?:\.\.\.|$)", extrait.strip(), re.I)
+                if m:
+                    renvoi = simple(m.group(1).strip(" .:"))
+            item = {"langue": code, "slug": slug, "titre": titre, "categorie": cat, "_score": score, "_renvoi": renvoi}
+            brutes.append(item)
+            if not renvoi or score > 0:
+                par_titre[simple(titre)] = cat
+        # Si une fiche est un renvoi (« voir X ») sans mot-clé dans son propre titre, elle hérite de la catégorie de X
+        for item in brutes:
+            if item["_renvoi"] and item["_score"] == 0:
+                cible = par_titre.get(item["_renvoi"])
+                if not cible:
+                    cible = next((c for k, c in par_titre.items() if item["_renvoi"] in k or k in item["_renvoi"]), None)
+                if cible:
+                    item["categorie"] = cible
+            lignes.append({k: item[k] for k in ("langue", "slug", "titre", "categorie")})
+    if not lignes:
+        return
+    lignes.sort(key=lambda x: (x["langue"], simple(x["titre"]), x["slug"]))
+    with MALADIES_RARES.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["langue", "slug", "titre", "categorie"])
+        w.writeheader()
+        w.writerows(lignes)
+    print(f"Écrit : {MALADIES_RARES.relative_to(RACINE)} ({len(lignes)} fiches)", file=sys.stderr)
+
+
 def commente_par(fiche):
     """DOI de l'article commenté par un avis Faculty Opinions."""
     if fiche.get("doi", "").startswith("10.3410/"):
@@ -1006,6 +1121,7 @@ def main():
     ecrire_resumes(paires)
     ecrire_coauteurs(index.fiches, trouvees)
     ecrire_lectures(index.fiches)
+    ecrire_maladies_rares()
     if annexes:
         return
 

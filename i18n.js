@@ -156,23 +156,24 @@ window.I18N = (function () {
 
     // maladies rares
     "À savoir": "Good to know",
-    "Fiches-repères & syndromes emblématiques": "Key reference sheets & emblematic syndromes",
-    "Sélection de pathologies fréquemment rencontrées ou à haut risque anesthésique pédiatrique, reliées aux fiches de la base UCLouvain et aux travaux de Francis Veyckemans.":
-      "Selection of conditions frequently encountered or carrying high paediatric anaesthetic risk, linked to the UCLouvain database records and Francis Veyckemans's work.",
-    "Rechercher un syndrome ou filtrer les fiches ci-dessous": "Search a syndrome or filter the cards below",
+    "Explorateur des fiches": "Database explorer",
+    "Accès direct à l'intégralité des fiches de la base UCLouvain par mot-clé, domaine clinique ou initiale.":
+      "Direct access to all entries in the UCLouvain database by keyword, clinical domain or initial.",
+    "Catégorie": "Category",
+    "Toutes les catégories": "All categories",
     "Pierre Robin, Duchenne, hyperthermie maligne, Marfan…": "Pierre Robin, Duchenne, malignant hyperthermia, Marfan…",
     "Tous": "All",
-    "Fiche UCLouvain (FR) ↗": "UCLouvain record (FR) ↗",
-    "Fiche UCLouvain (EN) ↗": "UCLouvain record (EN) ↗",
-    "Publications & conférences sur ce syndrome →": "Publications & presentations on this syndrome →",
-    "Chercher « {q} » dans les publications →": "Search “{q}” in publications →",
-    "Ouvrir l'index alphabétique complet sur UCLouvain ↗": "Open the full alphabetical index on UCLouvain ↗",
+    "Afficher la suite ({n} restantes)": "Show more ({n} remaining)",
     "Voies aériennes": "Airway",
     "Neuromusculaire": "Neuromuscular",
-    "Urgence métabolique": "Metabolic emergency",
-    "Métabolique & voies aériennes": "Metabolic & airway",
-    "Cardiopathie & tissus conjonctifs": "Heart & connective tissue",
-    "Syndromes malformatifs": "Malformation syndromes",
+    "Métabolique & endocrinien": "Metabolic & endocrine",
+    "Cardiopathie & vasculaire": "Cardiac & vascular",
+    "Hématologie & immunité": "Haematology & immunity",
+    "Squelette & tissus conjonctifs": "Skeletal & connective tissue",
+    "Dermatologie & muqueuses": "Dermatology & mucosa",
+    "Neurologie & épilepsie": "Neurology & epilepsy",
+    "Rein, foie & digestif": "Renal, hepatic & GI",
+    "Syndrome malformatif": "Malformation syndrome",
 
     // résumé, recherche globale et thème
     "Résumé": "Abstract",
@@ -248,7 +249,7 @@ window.I18N = (function () {
     publication: ["publication", "publications"], citation: ["citation", "citations"], article: ["article", "articles"],
     lecture: ["review", "reviews"], coauteur: ["co-author", "co-authors"], intervention: ["presentation", "presentations"],
     lien: ["link", "links"], "vidéo": ["video", "videos"], podcast: ["podcast", "podcasts"],
-    syndrome: ["syndrome", "syndromes"],
+    syndrome: ["syndrome", "syndromes"], fiche: ["entry", "entries"],
   };
 
   // blocs de texte avec liens ou mise en forme : l'élément porte data-t="clé"

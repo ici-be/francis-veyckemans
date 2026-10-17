@@ -51,20 +51,25 @@
       </a>
     </div>
 
-    <section class="mr-explorateur cadre" aria-label="Fiches-repères &amp; syndromes emblématiques">
+    <section class="mr-explorateur cadre" aria-label="Explorateur des fiches">
       <div class="mr-explorateur-tete">
-        <h2>Fiches-repères &amp; syndromes emblématiques</h2>
-        <p class="mr-sous-intro">Sélection de pathologies fréquemment rencontrées ou à haut risque anesthésique pédiatrique, reliées aux fiches de la base UCLouvain et aux travaux de Francis Veyckemans.</p>
+        <h2>Explorateur des fiches</h2>
+        <p class="mr-sous-intro" id="mr-sous-intro">Accès direct à l'intégralité des fiches de la base UCLouvain par mot-clé, domaine clinique ou initiale.</p>
       </div>
-      <div class="mr-barre">
+      <div class="filtres mr-filtres">
         <label class="champ recherche">
-          <span>Rechercher un syndrome ou filtrer les fiches ci-dessous</span>
+          <span>Rechercher</span>
           <input type="search" id="mr-recherche" placeholder="Pierre Robin, Duchenne, hyperthermie maligne, Marfan…" autocomplete="off">
+        </label>
+        <label class="champ">
+          <span>Catégorie</span>
+          <select id="mr-categorie"><option value="">Toutes les catégories</option></select>
         </label>
       </div>
       <div id="mr-lettres" class="mr-lettres" role="group" aria-label="Index alphabétique"></div>
+      <p class="compte" id="mr-compte" aria-live="polite">Chargement…</p>
       <div id="mr-fiches" class="mr-grille"></div>
-      <div id="mr-lien-recherche" class="mr-lien-recherche" hidden></div>
+      <div id="mr-plus" class="mr-plus" hidden></div>
     </section>
 
     <section class="mr-notes">
