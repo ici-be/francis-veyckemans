@@ -27,6 +27,7 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
   corrigées à la main, sont conservées ; un lieu introuvable est ajouté sans coordonnées, à compléter à la main ;
 - donnees/medias.csv : copie de l'onglet « Médias » (vidéos et podcasts, remplis à la main) ; la vignette
   de chaque vidéo YouTube nouvelle est enregistrée dans medias/ ;
+- donnees/liens.csv : copie de l'onglet « Liens » (rempli à la main) ;
 - donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
   revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
   éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
@@ -773,9 +774,23 @@ def id_onglet_conferences():
     return m.group(1) if m else ""
 
 
-def id_onglet_medias():
-    m = re.search(r'medias:\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
+def id_onglet(cle):
+    """gid d'un onglet du tableau, lu dans config.js (« medias: "…" », « liens: "…" »)."""
+    m = re.search(cle + r':\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
     return m.group(1) if m else ""
+
+
+def id_onglet_medias():
+    return id_onglet("medias")
+
+
+def copie_onglet(sheet_id, cle, fichier):
+    """Copie de secours d'un onglet rempli à la main (Médias, Liens) dans donnees/."""
+    gid = id_onglet(cle)
+    if sheet_id and gid:
+        lignes = lire_tableau(sheet_id, gid, ("id",))
+        if lignes:
+            ecrire_csv(lignes, fichier, list(lignes[0].keys()))
 
 
 def copie_medias(sheet_id):
@@ -962,6 +977,7 @@ def main():
         ecrire_csv(lire_tableau(sheet_id))  # copie de secours dans le dépôt
         conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
         copie_medias(sheet_id)
+        copie_onglet(sheet_id, "liens", RACINE / "donnees" / "liens.csv")
         return
 
     toutes = existantes + nouvelles

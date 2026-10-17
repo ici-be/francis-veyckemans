@@ -476,16 +476,22 @@ function installerConferences() {
 // ---------------------------------------------------------------- onglet des vidéos et podcasts
 
 /** Crée l'onglet « Médias », rempli avec donnees/medias.csv du site, et affiche son gid pour config.js. */
-function installerMedias() {
+function installerMedias() { installerOnglet('Médias', 'medias.csv', 'medias'); }
+
+/** Crée l'onglet « Liens », rempli avec donnees/liens.csv du site, et affiche son gid pour config.js. */
+function installerLiens() { installerOnglet('Liens', 'liens.csv', 'liens'); }
+
+/** Onglet rempli à la main (pas par la collecte), créé à partir d'un fichier du site s'il n'existe pas. */
+function installerOnglet(nom, fichier, cleConfig) {
   const classeur = SpreadsheetApp.getActive();
-  let feuille = classeur.getSheetByName('Médias');
+  let feuille = classeur.getSheetByName(nom);
   if (!feuille) {
-    const lignes = Utilities.parseCsv(UrlFetchApp.fetch(LISTE_DU_SITE.replace('publications.csv', 'medias.csv')).getContentText('UTF-8'));
-    feuille = classeur.insertSheet('Médias');
+    const lignes = Utilities.parseCsv(UrlFetchApp.fetch(LISTE_DU_SITE.replace('publications.csv', fichier)).getContentText('UTF-8'));
+    feuille = classeur.insertSheet(nom);
     feuille.getRange(1, 1, feuille.getMaxRows(), lignes[0].length).setNumberFormat('@');
     feuille.getRange(1, 1, lignes.length, lignes[0].length).setValues(lignes);
     mettreEnForme(feuille, lignes[0], 2, lignes.length - 1);
     protegerEntete(feuille);
   }
-  Logger.log('Onglet « Médias » : gid = ' + feuille.getSheetId() + ' (à mettre dans config.js, ligne medias:)');
+  Logger.log('Onglet « ' + nom + ' » : gid = ' + feuille.getSheetId() + ' (à mettre dans config.js, ligne ' + cleConfig + ':)');
 }

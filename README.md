@@ -103,6 +103,12 @@ La page lit `donnees/medias.csv` (ou l'onglet **« Médias »** du tableau, une 
 personnes), `url`, `notes`, `masquer`. Une vidéo YouTube s'affiche avec sa vignette ; le lecteur ne se charge qu'au clic
 (sans cookies). La collecte du lundi enregistre la vignette de chaque nouvelle vidéo dans `medias/<identifiant>.jpg` ; en attendant, elle est lue chez YouTube.
 
+## Liens
+
+La page Liens lit `donnees/liens.csv` (ou l'onglet **« Liens »** du tableau, une fois installé avec la fonction
+`installerLiens` d'Apps Script et son gid mis dans `config.js`, ligne `liens:`). Colonnes : `id` (code unique),
+`categorie` (les rubriques s'affichent dans l'ordre où elles apparaissent), `nom`, `description`, `url`, `langue`, `masquer`.
+
 ## Lancer la collecte à la main
 
 ```sh
