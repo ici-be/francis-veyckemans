@@ -6,6 +6,7 @@
  *     Code.gs par ce fichier, enregistrer.
  *  2. Choisir la fonction installer, cliquer sur ▶ Exécuter, accepter l'autorisation.
  *     L'onglet « Publications » est rempli avec la liste du site, et le journal affiche la clé secrète.
+ *     (Pour la revoir plus tard : choisir la fonction afficherCle et l'exécuter.)
  *  3. Déployer → Nouveau déploiement → type « Application Web » ;
  *     Exécuter en tant que : Moi ; Qui a accès : Tout le monde. Copier l'URL.
  *  4. Partager le tableau : « Tous les utilisateurs disposant du lien » → Lecteur
@@ -31,7 +32,10 @@ const LARGEURS = { titre: 420, auteurs: 260, revue: 180, notes: 220, lien_info: 
 function installer() {
   const classeur = SpreadsheetApp.getActive();
   const feuille = classeur.getSheets()[0];      // premier onglet : gid=0, comme dans config.js
-  if (feuille.getLastRow() > 1) throw new Error('Le premier onglet contient déjà des données : installer ne fait rien.');
+  if (feuille.getLastRow() > 1) {
+    Logger.log('Le premier onglet contient déjà des données : elles ne sont pas réimportées.');
+    return afficherCle();
+  }
   feuille.setName(ONGLET);
 
   const lignes = Utilities.parseCsv(UrlFetchApp.fetch(LISTE_DU_SITE).getContentText('UTF-8'));
@@ -41,10 +45,19 @@ function installer() {
   mettreEnForme(feuille, entete, 2, lignes.length - 1);
   feuille.getRange(1, 1, lignes.length, entete.length).createFilter();
 
-  const cle = Utilities.getUuid();
-  PropertiesService.getScriptProperties().setProperty('CLE', cle);
-  Logger.log('Clé secrète : ' + cle);
   Logger.log((lignes.length - 1) + ' publications importées.');
+  afficherCle();
+}
+
+/** Affiche la clé secrète dans le journal (et la crée si elle n'existe pas encore). */
+function afficherCle() {
+  const proprietes = PropertiesService.getScriptProperties();
+  let cle = proprietes.getProperty('CLE');
+  if (!cle) {
+    cle = Utilities.getUuid();
+    proprietes.setProperty('CLE', cle);
+  }
+  Logger.log('Clé secrète : ' + cle);
 }
 
 function mettreEnForme(feuille, entete, premiere, nombre) {
