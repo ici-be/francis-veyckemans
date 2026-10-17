@@ -283,7 +283,8 @@ window.FV = (function () {
       annexe("donnees/lectures.csv"),
       annexe("donnees/conferences.csv"),
       annexe("donnees/medias.csv"),
-    ]).then(([pubs, txtLectures, txtConf, txtMedias]) => {
+      annexe("donnees/maladies_rares.csv"),
+    ]).then(([pubs, txtLectures, txtConf, txtMedias, txtMaladies]) => {
       const commentes = {};
       lireCSV(txtLectures).forEach((l) => (commentes[l.id] = l));
       const publications = pubs.filter((p) => !estAvis(p));
@@ -306,7 +307,21 @@ window.FV = (function () {
       const medias = lireCSV(txtMedias)
         .filter((m) => (m.id || m.titre) && !oui(m.masquer))
         .map((m) => ({ ...m, _texte: sansAccents([m.titre, m.evenement, m.source, m.intervenants, m.date].join(" ")) }));
-      return { publications, lectures, coauteurs: listeCoauteurs, conferences, medias };
+      const baseMRP = I18N.en ? "https://sites.uclouvain.be/anesthweekly/MRP_ENG/?" : "https://sites.uclouvain.be/anesthweekly/MRP/?";
+      const maladiesRares = lireCSV(txtMaladies)
+        .filter((f) => f.langue === I18N.langue && f.slug && f.titre)
+        .map((f) => {
+          const cat = f.categorie || "Syndrome malformatif";
+          const catTrad = I18N.valeur(cat);
+          return {
+            slug: f.slug,
+            titre: f.titre,
+            catTrad,
+            url: baseMRP + f.slug,
+            _texte: sansAccents([f.titre, cat, catTrad].join(" ")),
+          };
+        });
+      return { publications, lectures, coauteurs: listeCoauteurs, conferences, medias, maladiesRares };
     });
     return cacheGlobal;
   }
@@ -368,6 +383,7 @@ window.FV = (function () {
         const confs = filtre(d.conferences);
         const meds = filtre(d.medias);
         const coauts = filtre(d.coauteurs);
+        const maladies = filtre(d.maladiesRares);
 
         const groupes = [];
         if (pubs.length) {
@@ -426,6 +442,18 @@ window.FV = (function () {
                 <li><a href="${I18N.lien("./?coauteur=" + encodeURIComponent(g.nom))}">
                   <span class="cmdk-item-titre">${surligner(g.nom, mots)}</span>
                   <span class="cmdk-item-meta">${pluriel(g.n, "publication")}</span>
+                </a></li>`).join("")}
+              </ul>
+            </div>`);
+        }
+        if (maladies.length) {
+          groupes.push(`
+            <div class="cmdk-groupe">
+              <div class="cmdk-titre"><span>${echapper(t("Maladies rares"))} (${maladies.length})</span><a href="${I18N.lien("maladies-rares.html?q=" + encodeURIComponent(q))}">${echapper(t("Ouvrir"))} →</a></div>
+              <ul class="cmdk-liste">${maladies.slice(0, 5).map((f) => `
+                <li><a href="${echapper(f.url)}" target="_blank" rel="noopener">
+                  <span class="cmdk-item-titre">${surligner(f.titre, mots)} ↗</span>
+                  <span class="cmdk-item-meta">${echapper(f.catTrad)}</span>
                 </a></li>`).join("")}
               </ul>
             </div>`);

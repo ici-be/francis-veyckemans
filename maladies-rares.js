@@ -60,6 +60,8 @@
             _texte: sansAccents(f.titre + " " + cat + " " + catTrad),
           };
         });
+      const q = new URLSearchParams(location.search).get("q");
+      if (q) champ.value = q;
       remplirCategories();
       dessinerLettres();
       afficher();
