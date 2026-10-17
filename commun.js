@@ -65,6 +65,7 @@ window.FV = (function () {
     p._annee = parseInt(p.annee, 10) || 0;
     p._citations = Number.isFinite(nbCitations[p.id]) ? nbCitations[p.id] : null;
     p.type = p.type || "article";
+    if (p.pdf_drive) p.lien_pdf = p.pdf_drive;  // PDF déposé dans le dossier Google Drive : prioritaire
     p._titre = estAvis(p) ? p.titre.replace(/^Faculty Opinions recommendation of\s*/i, "") : p.titre;
     p._texte = sansAccents([p.titre, p.auteurs, p._noms.join(" "), p.revue, p.annee, p.type, p.notes, p.doi, p.pmid].join(" "));
     return p;

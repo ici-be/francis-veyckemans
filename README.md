@@ -42,11 +42,28 @@ Ne pas renommer ni déplacer les colonnes, ni l'onglet « Publications » (il do
 Colonnes : `id`, `annee`, `titre`, `auteurs` (séparés par des virgules), `revue`, `volume`,
 `numero`, `pages`, `type`, `langue`, `doi`, `pmid`, `pmcid`, `lien_info` (page de l'article),
 `lien_pdf`, `notes`, `masquer`, `verrouille`, `sources` (où l'article a été trouvé),
-`ajoute_le` (date d'ajout automatique).
+`ajoute_le` (date d'ajout automatique), `pdf_drive` (lien du PDF déposé dans Google Drive, rempli par le script).
 
 Le `type` est libre ; les types existants : article, étude clinique, revue de la littérature,
 recommandations, éditorial, commentaire, cas clinique, chapitre de livre, livre,
 résumé de congrès, avis Faculty Opinions (F1000), dépôt universitaire (DIAL, Lirias), erratum.
+
+## Ajouter des PDF (dossier Google Drive)
+
+Déposer les PDF dans le dossier **« pdf »** du Google Drive, à côté du tableau. Dans l'heure qui suit,
+chaque fichier est rattaché à son article et le bouton **PDF** apparaît sur le site
+(le PDF du dossier remplace alors le lien PDF trouvé automatiquement).
+
+- Le fichier peut garder son nom d'origine. Pour le reconnaître, le script cherche dans le nom du
+  fichier puis dans la première page du PDF un **DOI**, un **PMID** ou le **titre** de l'article.
+- L'onglet **« PDF »** du tableau liste les fichiers, l'article rattaché et la façon dont il a été trouvé.
+  Fichier non reconnu ou mal rattaché : écrire dans sa colonne `article` l'id de l'article
+  (colonne `id` de l'onglet Publications), son DOI ou son PMID.
+- Retirer un fichier du dossier retire son lien du site.
+- Pour ne pas attendre : menu **Archives → Lier les PDF maintenant** dans le tableau.
+
+Installation (une seule fois), dans l'éditeur Apps Script du tableau, après y avoir recollé
+`outils/tableau.gs` : *Services ＋ → Drive API → Ajouter*, puis exécuter la fonction `installerPdf`.
 
 ## Lancer la collecte à la main
 

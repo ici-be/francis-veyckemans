@@ -22,6 +22,19 @@
  *    la colonne « sources » (où l'article a été trouvé) est la seule mise à jour d'office ;
  *  - avec « essai », rien n'est écrit : la réponse dit ce qui serait fait.
  * Puis l'onglet est trié par année (la plus récente en haut), puis par titre.
+ *
+ * PDF déposés dans Google Drive (voir plus bas, lierPdfs) :
+ *  1. Dans l'éditeur Apps Script : Services ＋ → « Drive API » → Ajouter
+ *     (permet de lire le texte des PDF pour y trouver le DOI ; sans cela, seul le nom du fichier sert).
+ *  2. Choisir la fonction installerPdf, cliquer sur ▶ Exécuter, accepter l'autorisation.
+ *     Elle crée le dossier « pdf » à côté du tableau (ou reprend celui qui existe), le partage en
+ *     lecture avec le lien, et programme une vérification toutes les heures.
+ *  Ensuite, il suffit de déposer des PDF dans le dossier. Chaque fichier est rattaché à un article
+ *  (DOI ou PMID dans le nom du fichier ou dans le texte du PDF, sinon titre), noté dans l'onglet
+ *  « PDF », et son lien est écrit dans la colonne pdf_drive : le site affiche alors le bouton PDF.
+ *  Fichier non reconnu : écrire dans l'onglet « PDF », colonne « article », l'id de l'article
+ *  (ou son DOI, ou son PMID). Rattachement erroné : corriger cette case de la même façon.
+ *  Menu Archives → Lier les PDF maintenant, pour ne pas attendre l'heure suivante.
  */
 
 const ONGLET = 'Publications';
@@ -146,4 +159,187 @@ function traiter(demande) {
 
 function repondre(objet) {
   return ContentService.createTextOutput(JSON.stringify(objet)).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ---------------------------------------------------------------- PDF déposés dans Google Drive
+
+const ONGLET_PDF = 'PDF';
+const ENTETE_PDF = ['fichier', 'article', 'rattaché par', 'lien', 'id_fichier'];
+const PDF_PAR_PASSAGE = 15;  // lire le texte d'un PDF prend quelques secondes : le reste attend le passage suivant
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Archives').addItem('Lier les PDF maintenant', 'lierPdfs').addToUi();
+}
+
+function installerPdf() {
+  const tableau = DriveApp.getFileById(SpreadsheetApp.getActive().getId());
+  const parents = tableau.getParents();
+  const parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  const existants = parent.getFoldersByName('pdf');
+  const dossier = existants.hasNext() ? existants.next() : parent.createFolder('pdf');
+  try {
+    dossier.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (err) {
+    Logger.log('Partage du dossier à faire à la main (« Tous les utilisateurs disposant du lien ») : ' + err);
+  }
+  PropertiesService.getScriptProperties().setProperty('DOSSIER_PDF', dossier.getId());
+  ScriptApp.getProjectTriggers()
+    .filter((t) => t.getHandlerFunction() === 'lierPdfs')
+    .forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('lierPdfs').timeBased().everyHours(1).create();
+  Logger.log('Dossier des PDF : ' + dossier.getUrl());
+  Logger.log(typeof Drive === 'undefined'
+    ? 'Service « Drive API » absent : seuls les noms de fichiers serviront à reconnaître les articles.'
+    : 'Service « Drive API » présent : le texte des PDF sera lu.');
+  lierPdfs();
+}
+
+function lierPdfs() {
+  const idDossier = PropertiesService.getScriptProperties().getProperty('DOSSIER_PDF');
+  if (!idDossier) throw new Error('Lancer d\'abord installerPdf.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const classeur = SpreadsheetApp.getActive();
+    const pub = classeur.getSheetByName(ONGLET);
+    let entete = pub.getRange(1, 1, 1, pub.getLastColumn()).getValues()[0].map(String);
+    if (!entete.includes('pdf_drive')) {
+      pub.getRange(1, entete.length + 1).setValue('pdf_drive').setFontWeight('bold').setBackground('#e3f0ef');
+      entete.push('pdf_drive');
+    }
+    const lignes = pub.getRange(2, 1, Math.max(1, pub.getLastRow() - 1), entete.length).getValues();
+    const col = (nom) => entete.indexOf(nom);
+    const index = indexArticles(lignes, col);
+
+    let feuille = classeur.getSheetByName(ONGLET_PDF);
+    if (!feuille) {
+      feuille = classeur.insertSheet(ONGLET_PDF);
+      feuille.getRange(1, 1, 1, ENTETE_PDF.length).setValues([ENTETE_PDF]).setFontWeight('bold').setBackground('#e3f0ef');
+      feuille.setFrozenRows(1);
+      feuille.setColumnWidth(1, 360);
+      feuille.setColumnWidth(2, 260);
+      feuille.setColumnWidth(3, 220);
+    }
+    const suivis = feuille.getLastRow() > 1 ? feuille.getRange(2, 1, feuille.getLastRow() - 1, ENTETE_PDF.length).getValues() : [];
+    const parFichier = {};
+    suivis.forEach((s) => { parFichier[s[4]] = s; });
+
+    // nouveaux fichiers du dossier
+    const presents = {};
+    let lus = 0;
+    const fichiers = DriveApp.getFolderById(idDossier).getFilesByType(MimeType.PDF);
+    while (fichiers.hasNext()) {
+      const f = fichiers.next();
+      presents[f.getId()] = true;
+      const deja = parFichier[f.getId()];
+      if (deja) {
+        if (deja[2] === 'retiré du dossier') deja[2] = 'remis dans le dossier';
+        continue;
+      }
+      if (lus >= PDF_PAR_PASSAGE) continue;
+      lus++;
+      try { f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (err) { /* partage hérité du dossier */ }
+      const r = reconnaitre(f, index);
+      const ligne = [f.getName(), r.id || '', r.id ? r.par : 'non reconnu : indiquer l\'id, le DOI ou le PMID', 
+        'https://drive.google.com/file/d/' + f.getId() + '/view', f.getId()];
+      suivis.push(ligne);
+      parFichier[f.getId()] = ligne;
+    }
+    suivis.forEach((s) => { if (!presents[s[4]]) s[2] = 'retiré du dossier'; });
+
+    // lien voulu pour chaque article (l'id peut avoir été corrigé à la main, ou être un DOI / PMID)
+    const voulu = {};
+    const nosLiens = {};
+    suivis.forEach((s) => {
+      nosLiens[s[3]] = true;
+      const id = resoudre(String(s[1]).trim(), index);
+      if (s[1] && !id) s[2] = 'article introuvable : vérifier l\'id';
+      else if (id && /^(non reconnu|article introuvable)/.test(s[2])) s[2] = 'à la main';
+      if (id && presents[s[4]] && !voulu[id]) voulu[id] = s[3];
+    });
+
+    // colonne pdf_drive : on ne touche qu'aux liens vides ou venant de ce dossier
+    const cPdf = col('pdf_drive'), cId = col('id');
+    const colonne = lignes.map((l) => {
+      const actuel = String(l[cPdf] || '');
+      const cible = voulu[l[cId]];
+      if (cible) return [actuel && !nosLiens[actuel] ? actuel : cible];
+      return [nosLiens[actuel] ? '' : actuel];
+    });
+    pub.getRange(2, cPdf + 1, colonne.length, 1).setValues(colonne);
+    if (suivis.length) feuille.getRange(2, 1, suivis.length, ENTETE_PDF.length).setValues(suivis);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cleTexte(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function indexArticles(lignes, col) {
+  const index = { ids: {}, dois: {}, pmids: {}, titres: [] };
+  lignes.forEach((l) => {
+    const id = String(l[col('id')] || '');
+    if (!id) return;
+    index.ids[id] = true;
+    const doi = String(l[col('doi')] || '').toLowerCase().trim();
+    if (doi) index.dois[doi] = id;
+    const pmid = String(l[col('pmid')] || '').trim();
+    if (pmid) index.pmids[pmid] = id;
+    const titre = cleTexte(l[col('titre')]);
+    if (titre.length >= 25) index.titres.push([titre, id]);
+  });
+  index.titres.sort((a, b) => b[0].length - a[0].length);  // le titre le plus long d'abord
+  return index;
+}
+
+/** id de l'article désigné par un id, un DOI (avec ou sans https://doi.org/) ou un PMID. */
+function resoudre(valeur, index) {
+  if (!valeur) return '';
+  if (index.ids[valeur]) return valeur;
+  const doi = valeur.toLowerCase().replace(/^(https?:\/\/)?(dx\.)?doi\.org\//, '').replace(/^doi:/, '');
+  return index.dois[doi] || index.pmids[valeur] || '';
+}
+
+/** Rattache un PDF à un article : DOI, PMID ou titre, dans le nom puis dans le texte du fichier. */
+function reconnaitre(fichier, index) {
+  const nom = fichier.getName().replace(/\.pdf$/i, '');
+  const bas = nom.toLowerCase();
+  for (const doi in index.dois) {
+    if (bas.includes(doi) || bas.includes(doi.replace(/\//g, '_'))) return { id: index.dois[doi], par: 'DOI (nom du fichier)' };
+  }
+  for (const m of bas.match(/\d{6,8}/g) || []) {
+    if (index.pmids[m]) return { id: index.pmids[m], par: 'PMID (nom du fichier)' };
+  }
+  const cleNom = cleTexte(nom);
+  if (cleNom.length >= 20) {
+    const t = index.titres.find(([titre]) => titre.startsWith(cleNom) || cleNom.includes(titre));
+    if (t) return { id: t[1], par: 'titre (nom du fichier)' };
+  }
+  const texte = texteDuPdf(fichier).slice(0, 5000);  // la première page : pas les références
+  for (const m of texte.toLowerCase().match(/10\.\d{4,9}\/[^\s"<>]+/g) || []) {
+    const doi = m.replace(/[.,;)\]]+$/, '');
+    if (index.dois[doi]) return { id: index.dois[doi], par: 'DOI (texte du PDF)' };
+  }
+  const cleT = cleTexte(texte);
+  const t = cleT && index.titres.find(([titre]) => cleT.includes(titre));
+  if (t) return { id: t[1], par: 'titre (texte du PDF)' };
+  return {};
+}
+
+/** Texte du PDF, par conversion temporaire en document Google (service avancé « Drive API »). */
+function texteDuPdf(fichier) {
+  if (typeof Drive === 'undefined') return '';
+  let copie;
+  try {
+    copie = Drive.Files.copy({ name: 'texte temporaire', title: 'texte temporaire', mimeType: MimeType.GOOGLE_DOCS }, fichier.getId());
+    return DocumentApp.openById(copie.id).getBody().getText();
+  } catch (err) {
+    Logger.log('Texte illisible pour ' + fichier.getName() + ' : ' + err);
+    return '';
+  } finally {
+    if (copie) DriveApp.getFileById(copie.id).setTrashed(true);
+  }
 }

@@ -62,6 +62,7 @@ COLONNES = [
     "id", "annee", "titre", "auteurs", "revue", "volume", "numero", "pages",
     "type", "langue", "doi", "pmid", "pmcid", "lien_info", "lien_pdf",
     "notes", "masquer", "verrouille", "sources", "ajoute_le",
+    "pdf_drive",  # rempli par le script du tableau (PDF déposés dans Google Drive)
 ]
 # colonnes que le script remplit ; les autres sont réservées aux humains
 COLONNES_AUTO = [
