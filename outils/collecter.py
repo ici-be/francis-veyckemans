@@ -2,7 +2,7 @@
 """Collecte les publications de Francis Veyckemans et complète le tableau Google Sheets.
 
 Sources interrogées : PubMed, OpenAlex (qui inclut les données d'Unpaywall pour les PDF
-en accès libre) et son profil ORCID.
+en accès libre), son profil ORCID, et pour les livres le catalogue de la BnF et le SUDOC.
 
 Règles, pour que les corrections faites à la main ne soient jamais perdues :
 - une ligne déjà présente n'est jamais supprimée ;
@@ -56,6 +56,7 @@ OPENALEX_AUTEURS = [
     "A5081804673", "A5109360318", "A5148869488", "A5038694507",
 ]
 PUBMED_REQUETE = "Veyckemans F[Author]"
+IDREF = "096506385"  # sa notice d'autorité dans le catalogue universitaire français (SUDOC)
 
 COLONNES = [
     "id", "annee", "titre", "auteurs", "revue", "volume", "numero", "pages",
@@ -280,6 +281,95 @@ def orcid():
     return resultats
 
 
+# ---------------------------------------------------------------- livres (BnF, SUDOC)
+
+ROLES_AUTEUR = {"Auteur", "Auteur du texte", "Éditeur scientifique", "Directeur de publication", "Coordinateur"}
+
+
+def livres():
+    """Ses livres, d'après le catalogue de la BnF puis le SUDOC (même livre : même ISBN)."""
+    notices = []
+    xml = get("https://catalogue.bnf.fr/api/SRU", params={
+        "version": "1.2", "operation": "searchRetrieve", "recordSchema": "unimarcxchange",
+        "query": 'bib.author all "veyckemans francis"', "maximumRecords": 200,
+    }).content
+    for rec in ET.fromstring(xml).iter():
+        if rec.tag.endswith("}record") and rec.get("format") == "UNIMARC":
+            notices.append(lire_unimarc(rec, "BnF"))
+    roles = get(f"https://www.idref.fr/services/biblio/{IDREF}.json").json()["sudoc"]["result"]["role"]
+    for role in roles if isinstance(roles, list) else [roles]:
+        if role.get("roleName") not in ROLES_AUTEUR:
+            continue  # pas les thèses dont il était directeur
+        docs = role["doc"] if isinstance(role["doc"], list) else [role["doc"]]
+        for d in docs:
+            if d.get("referentiel") == "sudoc":
+                notices.append(lire_unimarc(ET.fromstring(get(f"https://www.sudoc.fr/{d['ppn']}.xml").content), "SUDOC"))
+    resultats, par_isbn = [], {}
+    for n in notices:
+        if not n:
+            continue
+        deja = par_isbn.get(n["_isbn"]) if n["_isbn"] else None
+        if deja:
+            for c, v in n.items():
+                deja.setdefault(c, v) if deja.get(c) else deja.__setitem__(c, v)
+            continue
+        resultats.append(n)
+        if n["_isbn"]:
+            par_isbn[n["_isbn"]] = n
+    print(f"BnF et SUDOC : {len(resultats)} livres", file=sys.stderr)
+    return resultats
+
+
+def isbn13(isbn):
+    chiffres = re.sub(r"[^0-9Xx]", "", isbn or "")
+    if len(chiffres) == 10:  # conversion ISBN-10 → ISBN-13
+        base = "978" + chiffres[:9]
+        cle = (10 - sum(int(c) * (1 if i % 2 == 0 else 3) for i, c in enumerate(base)) % 10) % 10
+        return base + str(cle)
+    return chiffres if len(chiffres) == 13 else ""
+
+
+def lire_unimarc(rec, source):
+    champs = {}
+    for df in rec:
+        if df.tag.endswith("datafield"):
+            sous = {}
+            for sf in df:
+                sous.setdefault(sf.get("code"), []).append((sf.text or "").strip())
+            champs.setdefault(df.get("tag"), []).append(sous)
+    sf = lambda tag, code: next((s[code][0] for s in champs.get(tag, []) if code in s), "")
+    titre = sf("200", "a")
+    if not titre:
+        return None
+    if sf("200", "e"):
+        titre += " : " + sf("200", "e")
+    auteurs = []
+    for tag in ("700", "701", "702"):
+        for a in champs.get(tag, []):
+            nom, prenom = (a.get("a") or [""])[0], (a.get("b") or [""])[0]
+            if nom and (tag != "702" or "veyckemans" in nom.lower()):
+                initiales = "".join(p[0] for p in re.split(r"[\s-]+", prenom) if p)
+                auteurs.append(f"{nom} {initiales}".strip())
+    if not any("veyckemans" in a.lower() for a in auteurs):
+        return None
+    editeur = sf("214", "c") or sf("210", "c")
+    lieu = sf("214", "a") or sf("210", "a")
+    annee = re.search(r"\d{4}", sf("214", "d") or sf("210", "d") or sf("100", "a")[9:13] or "")
+    details = [f"{lieu} : {editeur}" if lieu and editeur else editeur, sf("205", "a")]
+    lien = next((c.text for c in rec if c.tag.endswith("controlfield") and c.get("tag") == "003"), "")
+    return {
+        "annee": annee.group(0) if annee else "",
+        "titre": nettoyer(titre),
+        "auteurs": ", ".join(auteurs),
+        "revue": nettoyer(" · ".join(d for d in details if d).replace("[", "").replace("]", "")),
+        "type": "livre",
+        "langue": LANGUES.get(sf("101", "a"), sf("101", "a")),
+        "_page": lien.replace("http://", "https://"),
+        "_isbn": isbn13(sf("010", "a")),
+        "_source": source,
+    }
+
+
 # ---------------------------------------------------------------- fusion
 
 class Index:
@@ -300,6 +390,14 @@ class Index:
             a, b = f.get("annee"), r.get("annee")
             if not a or not b or abs(int(a) - int(b)) <= 1:
                 return f
+        if r.get("type") == "livre":
+            # un livre peut être catalogué avec ou sans sous-titre (« …, tome 2 »)
+            cle = cle_titre(r.get("titre"))
+            for f in self.fiches:
+                autre = cle_titre(f.get("titre"))
+                if f.get("type") == "livre" and len(min(cle, autre, key=len)) > 15 \
+                        and (autre.startswith(cle) or cle.startswith(autre)) and abs(int(f.get("annee") or 0) - int(r.get("annee") or 0)) <= 1:
+                    return f
         return None
 
     def ajouter(self, f):
@@ -518,7 +616,7 @@ def main():
         index.ajouter(f)
 
     # PubMed d'abord : ses métadonnées sont les plus soignées pour la médecine
-    trouvees = pubmed() + openalex() + orcid()
+    trouvees = pubmed() + openalex() + orcid() + livres()
     aujourdhui = datetime.date.today().isoformat()
     nouvelles, modifiees, paires = [], {}, []
     for r in trouvees:

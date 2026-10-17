@@ -11,7 +11,7 @@ Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coa
 | `commun.js`, `style.css` | chargement des données, boutons « Citer » et export BibTeX / RIS ; mise en page |
 | **tableau Google Sheets** | **la liste des publications** : c'est là qu'on corrige ; le site le lit en direct |
 | `donnees/publications.csv` | copie de secours du tableau (mise à jour chaque lundi), utilisée si Google est injoignable |
-| `outils/collecter.py` | cherche les publications dans PubMed, OpenAlex et ORCID et les envoie au tableau |
+| `outils/collecter.py` | cherche les publications dans PubMed, OpenAlex, ORCID, et les livres à la BnF et au SUDOC, et les envoie au tableau |
 | `outils/tableau.gs` | script du tableau : reçoit les envois de `collecter.py` (à coller dans Apps Script) |
 | `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex), réécrit par chaque collecte |
 | `donnees/coauteurs.csv` | forme complète « Nom Prénom » des variantes de noms (`alias,nom`) : complété par la collecte, corrigeable à la main (une ligne corrigée n'est plus modifiée) |

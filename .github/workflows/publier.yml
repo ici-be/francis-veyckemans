@@ -1,6 +1,6 @@
 # Cherche les nouvelles publications, puis publie le site sur GitHub Pages.
 # - à chaque « git push » sur main : publie seulement
-# - chaque lundi : cherche les nouvelles publications (PubMed, OpenAlex, ORCID), les envoie au
+# - chaque lundi : cherche les nouvelles publications (PubMed, OpenAlex, ORCID, BnF, SUDOC), les envoie au
 #   tableau Google Sheets et garde une copie du tableau dans donnees/publications.csv
 # - à la demande : onglet Actions → Publier → Run workflow
 # Les corrections faites dans le tableau sont visibles tout de suite : le site lit le tableau en direct.
