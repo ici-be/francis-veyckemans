@@ -97,70 +97,71 @@ window.FVCarte = (function () {
       const repere = enBelgique.length
         ? `<span class="carte-repere" aria-hidden="true" style="left:${b0[0]}%;top:${b0[1]}%;width:${b1[0] - b0[0]}%;height:${b1[1] - b0[1]}%"></span>` : "";
 
-      const europeHTML = enEurope.length ? `
-        <figure class="carte-principale">
-          <figcaption>${echapper(europe.titre)}</figcaption>
-          ${fond(europe, points(europe, enEurope, choisie, (l) => l.n > 1 && !dansCadre(belgique, l)), repere)}
-        </figure>` : "";
-      const belgiqueHTML = enBelgique.length ? `
-        <figure class="carte-zoom">
-          <figcaption>${echapper(belgique.titre)}</figcaption>
-          ${fond(belgique, points(belgique, enBelgique, choisie, () => true))}
-        </figure>` : "";
-      const ailleursHTML = ailleurs.length ? `
-        <div class="carte-ailleurs">
-          <p class="carte-titre">Hors d'Europe</p>
-          <div class="carte-petites">${ailleurs.map((g) => `
-            <figure class="carte-petite">
-              <figcaption>${echapper(g.r.titre)}</figcaption>
-              ${fond(g.r, points(g.r, g.lieux, choisie, () => true))}
-            </figure>`).join("")}
-          </div>
-        </div>` : "";
+      // chaque carte : largeur proportionnelle à son rapport largeur/hauteur, d'où des hauteurs égales sur une rangée
+      const figure = (carte, classe, contenu, extra = "") => `
+        <figure class="carte-fig ${classe}" style="--ratio:${(carte.w / carte.h).toFixed(4)}">
+          <figcaption>${echapper(carte.titre)}</figcaption>
+          ${fond(carte, contenu, extra)}
+        </figure>`;
+      const figures = [
+        enEurope.length ? figure(europe, "carte-principale", points(europe, enEurope, choisie, (l) => l.n > 1 && !dansCadre(belgique, l)), repere) : "",
+        enBelgique.length ? figure(belgique, "carte-zoom", points(belgique, enBelgique, choisie, () => true)) : "",
+        // carte agrandie : les petites cartes passent à la ligne
+        ailleurs.length && (enEurope.length || enBelgique.length) ? `<span class="carte-saut" aria-hidden="true"></span>` : "",
+        ...ailleurs.map((g) => figure(g.r, "carte-petite", points(g.r, g.lieux, choisie, () => true))),
+      ].join("");
       const sansCarteHTML = sansCarte.length
         ? `<p class="carte-sans">Sans position connue : ${sansCarte.map((l) => echapper(l.ville)).join(", ")}.</p>` : "";
+      const parVille = Object.fromEntries(lieux.map((l) => [l.ville, l]));
+      const resume = (l) => `<b>${echapper(l.ville)}</b> · ${echapper(l.pays)} · ${l.n} ${l.n > 1 ? u2 : u1}`;
+      const choixHTML = choisie && parVille[choisie]
+        ? `<p class="carte-choix">${resume(parVille[choisie])} · <button type="button" class="lien-bouton" data-effacer>toutes les villes</button></p>` : "";
 
+      const chevron = (haut) => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="${haut ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       const libelle = () => (grande ? "Réduire la carte" : "Agrandir la carte");
       conteneur.classList.toggle("carte-compacte", !grande);
       conteneur.innerHTML = `
-        <button type="button" class="lien-bouton carte-taille" aria-expanded="${grande}">${libelle()}</button>
-        <div class="carte-bloc">
-          ${europeHTML}
-          <div class="carte-cote">${belgiqueHTML}${ailleursHTML}<p class="carte-detail" aria-live="polite"></p></div>
-        </div>
-        ${sansCarteHTML}`;
+        <button type="button" class="carte-taille" aria-expanded="${grande}" aria-label="${libelle()}" title="${libelle()}">${chevron(grande)}</button>
+        <div class="carte-bloc">${figures}</div>
+        ${choixHTML}${sansCarteHTML}
+        <div class="carte-bulle" role="status" hidden></div>`;
 
       placerNoms(conteneur);
       window.removeEventListener("resize", conteneur._placer || (() => {}));
       conteneur._placer = () => placerNoms(conteneur);
       window.addEventListener("resize", conteneur._placer);
 
-      const detail = conteneur.querySelector(".carte-detail");
-      const parVille = Object.fromEntries(lieux.map((l) => [l.ville, l]));
-      const montrer = (ville) => {
-        const l = parVille[ville];
-        if (!l) {
-          detail.innerHTML = choisie ? `<b>${echapper(choisie)}</b> · <button type="button" class="lien-bouton" data-effacer>toutes les villes</button>`
-            : "Survoler un point pour voir le lieu ; cliquer pour n'afficher que ses interventions.";
-          return;
-        }
-        detail.innerHTML = `<b>${echapper(l.ville)}</b> · ${echapper(l.pays)} · ${l.n} ${l.n > 1 ? u2 : u1}`
-          + (ville === choisie ? ` · <button type="button" class="lien-bouton" data-effacer>toutes les villes</button>` : "")
-          + (l.details && l.details.length ? `<span class="carte-liste">${l.details.map(echapper).join(" · ")}</span>` : "");
+      // bulle au survol (ou au clavier) : le lieu et ses interventions
+      const bulle = conteneur.querySelector(".carte-bulle");
+      const montrer = (point) => {
+        const l = parVille[point.dataset.ville];
+        if (!l) return;
+        bulle.innerHTML = resume(l) + (l.details && l.details.length
+          ? `<span class="carte-liste">${l.details.slice(0, 6).map(echapper).join("<br>")}${l.details.length > 6 ? "<br>…" : ""}</span>` : "");
+        bulle.hidden = false;
+        const p = point.getBoundingClientRect(), c = conteneur.getBoundingClientRect();
+        const largeur = bulle.offsetWidth;
+        const x = Math.min(Math.max(p.left + p.width / 2 - c.left - largeur / 2, 8), c.width - largeur - 8);
+        const dessous = p.top - c.top < bulle.offsetHeight + 16;  // pas la place au-dessus
+        bulle.style.left = x + "px";
+        bulle.style.top = (dessous ? p.bottom - c.top + 8 : p.top - c.top - bulle.offsetHeight - 8) + "px";
       };
-      montrer(choisie);
-
-      conteneur.onmouseover = (e) => { const b = e.target.closest(".carte-point"); if (b) montrer(b.dataset.ville); };
+      const cacher = () => (bulle.hidden = true);
+      conteneur.onmouseover = (e) => { const b = e.target.closest(".carte-point"); if (b) montrer(b); };
       conteneur.onfocusin = conteneur.onmouseover;
-      conteneur.onmouseleave = () => montrer(choisie);
+      conteneur.onmouseout = (e) => { if (e.target.closest(".carte-point")) cacher(); };
+      conteneur.onfocusout = conteneur.onmouseout;
       conteneur.onclick = (e) => {
         const taille = e.target.closest(".carte-taille");
         if (taille) {
           grande = !grande;
           try { localStorage.setItem("fv-carte-grande", grande ? "1" : "0"); } catch (err) { /* stockage indisponible */ }
           conteneur.classList.toggle("carte-compacte", !grande);
-          taille.textContent = libelle();
+          taille.innerHTML = chevron(grande);
           taille.setAttribute("aria-expanded", String(grande));
+          taille.setAttribute("aria-label", libelle());
+          taille.title = libelle();
+          cacher();
           placerNoms(conteneur);
           return;
         }

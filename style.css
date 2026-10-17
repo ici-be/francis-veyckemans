@@ -368,12 +368,15 @@ td.revue i { color: var(--encre); font-style: italic; }
 .mr-notes ul { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 
 /* cartes des lieux (carte.js) */
-.carte-section { padding: 18px; }
-.carte-bloc { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
-.carte-bloc figure { margin: 0; }
-.carte-bloc figcaption, .carte-titre { margin: 0 0 6px; font: 600 16px/1.3 "Source Serif 4", Georgia, serif; }
-.carte-principale { flex: 3 1 420px; min-width: 0; }
-.carte-cote { flex: 2 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+.carte-section { position: relative; padding: 14px 18px; }
+.carte-bloc { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+/* largeur proportionnelle au rapport largeur/hauteur : toutes les cartes d'une rangée ont la même hauteur */
+.carte-fig { flex: var(--ratio) 1 0; min-width: 0; margin: 0; }
+.carte-fig figcaption {
+  margin: 0 0 5px; padding-right: 30px; font: 600 15px/1.3 "Source Serif 4", Georgia, serif;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.carte-saut { display: none; }
 .carte { position: relative; width: 100%; }
 .carte svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .carte svg path { fill: var(--terre); stroke: var(--surface); stroke-width: 0.8px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
@@ -393,27 +396,27 @@ td.revue i { color: var(--encre); font-style: italic; }
 }
 .carte-nom.gauche { transform: translate(calc(-100% - var(--decalage)), -50%); }
 .carte-repere { position: absolute; border: 1.5px dashed var(--encre-3); border-radius: 3px; pointer-events: none; }
-.carte-petites { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.carte-petite figcaption { font: 600 13px/1.3 "Source Sans 3", system-ui, sans-serif; color: var(--encre-2); }
-.carte-detail { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--trait); min-height: 44px; font-size: 14px; color: var(--encre-2); }
-.carte-detail b { color: var(--encre); }
-.carte-liste { display: block; margin-top: 2px; }
+.carte-taille {
+  position: absolute; top: 7px; right: 10px; z-index: 2; width: 28px; height: 28px; padding: 0;
+  display: grid; place-items: center; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--trait); background: var(--surface); color: var(--encre-2);
+}
+.carte-taille:hover, .carte-taille:focus-visible { color: var(--accent); border-color: var(--accent); }
+.carte-bulle {
+  position: absolute; z-index: 3; max-width: 320px; padding: 8px 11px; border-radius: 8px; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--trait); box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+  font-size: 13px; line-height: 1.45; color: var(--encre-2);
+}
+.carte-bulle b { color: var(--encre); }
+.carte-liste { display: block; margin-top: 4px; }
+.carte-choix { margin: 10px 0 0; font-size: 14px; color: var(--encre-2); }
+.carte-choix b { color: var(--encre); }
 .carte-sans { margin: 6px 0 0; font-size: 13px; color: var(--encre-3); }
-.carte-section { position: relative; }
-.carte-taille { position: absolute; top: 16px; right: 18px; font-size: 14px; z-index: 1; }
-/* carte réduite : les fonds tiennent sur une hauteur fixe, côte à côte, pour laisser voir le tableau */
-@media (min-width: 761px) {
-  .carte-compacte { --hauteur: 210px; padding: 14px 18px; }
-  .carte-compacte .carte-bloc figcaption, .carte-compacte .carte-titre { font-size: 15px; margin-bottom: 4px; }
-  .carte-compacte .carte-bloc { gap: 20px; }
-  .carte-compacte .carte-principale, .carte-compacte .carte-cote { flex: none; }
-  .carte-compacte .carte-cote { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 20px; flex: 1 1 260px; min-width: 0; }
-  .carte-compacte .carte-cote .carte-detail { flex: 1 1 200px; margin: 24px 0 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid var(--trait); }
-  .carte-compacte .carte-principale .carte, .carte-compacte .carte-zoom .carte {
-    width: calc(var(--hauteur) * var(--ratio)); height: var(--hauteur); aspect-ratio: auto;
-  }
-  .carte-compacte .carte-ailleurs { width: auto; }
-  .carte-compacte .carte-petites { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 160px; gap: 10px; }
+/* carte agrandie : Europe et Belgique sur une rangée, les petites cartes sur la suivante */
+.carte-section:not(.carte-compacte) .carte-saut { display: block; flex-basis: 100%; height: 0; }
+.carte-section:not(.carte-compacte) .carte-petite { flex: none; width: calc(240px * var(--ratio)); max-width: 100%; }
+@media (max-width: 760px) {
+  .carte-fig { flex-basis: 100%; }
 }
 
 @media (max-width: 760px) {
