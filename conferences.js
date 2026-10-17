@@ -5,7 +5,6 @@
   const { $, sansAccents, echapper, estLui, pluriel } = FV;
   const CONF = window.CONFIG || {};
   const corps = $("#tableau tbody");
-  const COULEURS = { "conférence": "article", "communication": "revue", "poster": "lettre" };
   const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   let toutes = [];
   let tri = { cle: "date", sens: -1 };
@@ -126,9 +125,8 @@
           ${c.notes ? `<div class="note">${echapper(c.notes)}</div>` : ""}
         </td>
         <td class="revue">${c.congres ? `<i>${echapper(c.congres)}</i>` : ""}${c.lieu ? `<div>${echapper(c.lieu)}</div>` : ""}</td>
-        <td class="type"><span class="pastille ${COULEURS[c.type] || "autre"}">${echapper(c.type)}</span></td>
         <td class="liens-cell">${liensHTML(c)}</td>
-      </tr>`).join("") : `<tr><td colspan="5" class="vide">Aucune intervention ne correspond.</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="4" class="vide">Aucune intervention ne correspond.</td></tr>`;
     document.querySelectorAll("#tableau th[data-tri]").forEach((th) =>
       th.setAttribute("aria-sort", th.dataset.tri === tri.cle ? (tri.sens > 0 ? "ascending" : "descending") : "none"));
   }

@@ -323,8 +323,9 @@ td.revue i { color: var(--encre); font-style: italic; }
 .carte svg path { fill: var(--terre); stroke: var(--surface); stroke-width: 0.8px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .carte-zoom .carte, .carte-petite .carte { border: 1px solid var(--trait); border-radius: 8px; overflow: hidden; }
 .carte-point {
-  position: absolute; transform: translate(-50%, -50%); padding: 0; cursor: pointer;
-  border-radius: 50%; border: 1.5px solid var(--surface); background: var(--accent);
+  /* centré par des marges entières (pas de transform, qui rend le bord flou) */
+  position: absolute; box-sizing: border-box; padding: 0; cursor: pointer;
+  border-radius: 50%; border: 2px solid var(--surface); background: var(--accent);
 }
 .carte-point::after { content: ""; position: absolute; inset: -7px; border-radius: 50%; }  /* cible plus large que le point */
 .carte-point:hover, .carte-point:focus-visible, .carte-point.choisi { background: var(--chaud); }

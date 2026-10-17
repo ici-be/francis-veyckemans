@@ -31,7 +31,8 @@ window.FVCarte = (function () {
     return l.lon >= lon0 && l.lon <= lon1 && l.lat >= lat0 && l.lat <= lat1;
   };
 
-  const taille = (n) => Math.round(7 + 5 * Math.sqrt(n));
+  // diamètre pair : le point se centre sur un pixel entier, sans flou
+  const taille = (n) => 2 * Math.round((7 + 5 * Math.sqrt(n)) / 2);
 
   function points(carte, lieux, choisie, etiquettes) {
     return lieux.map((l) => {
@@ -39,7 +40,7 @@ window.FVCarte = (function () {
       const d = taille(l.n);
       const etiquette = etiquettes(l) ? `<span class="carte-nom" style="left:${x}%;top:${y}%;--decalage:${d / 2 + 4}px">${echapper(l.ville)}</span>` : "";
       return `<button type="button" class="carte-point${l.ville === choisie ? " choisi" : ""}" data-ville="${echapper(l.ville)}"
-        style="left:${x}%;top:${y}%;width:${d}px;height:${d}px"
+        style="left:${x}%;top:${y}%;width:${d}px;height:${d}px;margin:${-d / 2}px 0 0 ${-d / 2}px"
         aria-label="${echapper(l.ville)}, ${l.n} ${l.n > 1 ? "interventions" : "intervention"}" aria-pressed="${l.ville === choisie}"></button>${etiquette}`;
     }).join("");
   }
