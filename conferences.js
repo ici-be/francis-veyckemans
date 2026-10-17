@@ -37,6 +37,7 @@
       });
       toutes = Papa.parse(texte, { header: true, skipEmptyLines: true }).data
         .filter((c) => (c.id || c.titre) && !/^(oui|x|1|true|vrai)$/i.test((c.masquer || "").trim()))
+        .filter((c) => !(CONF.typesConferencesCaches || []).includes((c.type || "").trim()))
         .map((c) => {
           c.type = c.type || "conférence";
           c._ville = (lieux[(c.lieu || "").trim()] || {}).ville || (c.lieu || "").trim();
