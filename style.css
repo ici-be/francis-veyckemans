@@ -412,8 +412,8 @@ td.revue i { color: var(--encre); font-style: italic; }
   .carte-compacte .carte-principale .carte, .carte-compacte .carte-zoom .carte {
     width: calc(var(--hauteur) * var(--ratio)); height: var(--hauteur); aspect-ratio: auto;
   }
-  .carte-compacte .carte-ailleurs { width: 170px; }
-  .carte-compacte .carte-petites { grid-template-columns: 1fr; gap: 8px; }
+  .carte-compacte .carte-ailleurs { width: auto; }
+  .carte-compacte .carte-petites { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 160px; gap: 10px; }
 }
 
 @media (max-width: 760px) {

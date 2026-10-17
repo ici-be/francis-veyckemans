@@ -80,6 +80,26 @@
   ]
  },
  {
+  "id": "ocean-indien",
+  "titre": "Océan Indien",
+  "fichier": "cartes/ocean-indien.svg",
+  "w": 320,
+  "h": 270,
+  "centre": [
+   50,
+   -18
+  ],
+  "x0": -0.17266156088221038,
+  "y0": -0.15691778162667525,
+  "k": 842.7252581564325,
+  "cadre": [
+   40,
+   -27,
+   62,
+   -9
+  ]
+ },
+ {
   "id": "afrique",
   "titre": "Afrique",
   "fichier": "cartes/afrique.svg",

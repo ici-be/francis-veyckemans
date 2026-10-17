@@ -26,6 +26,8 @@ CARTES = [
     # petites cartes « hors d'Europe » : affichées seulement si un lieu s'y trouve
     ("amerique-nord", "Amérique du Nord", "110m", 320, (-96, 38), (-126, 18, -64, 54)),
     ("amerique-sud", "Amérique du Sud", "110m", 320, (-60, -18), (-84, -55, -34, 13)),
+    # avant l'Afrique : Madagascar, Mayotte, La Réunion, Maurice y sont plus lisibles (îles du détail 50m)
+    ("ocean-indien", "Océan Indien", "50m", 320, (50, -18), (40, -27, 62, -9)),
     ("afrique", "Afrique", "110m", 320, (17, 3), (-19, -35, 52, 37)),
     ("asie", "Asie", "110m", 320, (95, 25), (35, -11, 148, 55)),
     ("oceanie", "Océanie", "110m", 320, (148, -27), (112, -47, 179, -9)),
