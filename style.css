@@ -81,7 +81,6 @@ h2 {
   margin: 0;
   font: 600 18px/1.3 "Source Serif 4", Georgia, serif;
 }
-h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--encre-2); }
 .cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .onglets { display: flex; gap: 4px 22px; flex-wrap: wrap; }
 .onglets a, .onglets span {
@@ -104,9 +103,7 @@ h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--encre-2); 
 
 /* graphique par année et périodes */
 .annees { margin: 24px 0; padding: 18px 18px 10px; }
-.periodes-cadre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
-.periodes-titre { font-size: 13px; font-weight: 600; color: var(--encre-3); }
-.periodes { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.periodes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .periode {
   flex: 1 1 160px; text-align: left; cursor: pointer;
   border: 2px solid transparent; border-radius: 7px; padding: 6px 10px;
@@ -135,28 +132,6 @@ h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--encre-2); 
   background: none; border: 0; padding: 0; color: var(--accent);
   font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer;
 }
-
-/* en un coup d'œil */
-.reperes { margin: 0 0 24px; }
-.reperes-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 12px; }
-.reperes .cadre { padding: 16px 18px; }
-.reperes .cadre h3:not(:first-child) { margin-top: 18px; }
-.reperes p { margin: 0; color: var(--encre-2); font-size: 14px; }
-.reperes p b { font: 600 20px "Source Serif 4", Georgia, serif; color: var(--encre); }
-.barres-liste { list-style: none; margin: 0; padding: 0; }
-.barres-liste li, .repere-revue {
-  display: grid; grid-template-columns: minmax(0, 1fr) 110px 32px; gap: 10px; align-items: center;
-  min-height: 30px; font-size: 14px;
-}
-#reperes-revues li { display: block; }
-.repere-revue {
-  width: 100%; background: none; border: 0; padding: 0 4px; margin: 0 -4px; border-radius: 5px;
-  font: inherit; font-size: 14px; color: var(--encre); text-align: left; cursor: pointer;
-}
-.repere-revue:hover { background: var(--ligne-survol); }
-.repere-revue i { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.jauge { display: block; height: 8px; border-radius: 4px; background: var(--ligne-survol); overflow: hidden; }
-.jauge span { display: block; height: 100%; background: var(--barre); border-radius: 4px; }
 .nombre { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); }
 
 /* filtres */
@@ -342,7 +317,6 @@ td.revue i { color: var(--encre); font-style: italic; }
   .tableau.coauteurs td { padding: 0; }
   .tableau.coauteurs td.periode-cell { grid-column: 1 / -1; }
   .exporter { margin-left: 0; }
-  .periodes-titre { flex-basis: 100%; }
   .lectures-annee { grid-template-columns: 1fr; gap: 6px; }
   .champ.recherche { flex-basis: 100%; }
 }

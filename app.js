@@ -7,7 +7,6 @@
   const corps = $("#tableau tbody");
   const AUTEURS_MAX = 8;
   const PERIODES = (window.CONFIG || {}).periodes || [];
-  const DEPOT = /DIAL|Digital Access|Lirias|CRIS|repository|Faculty Opinions/i;
 
   let toutes = [];
   // filtres posés en cliquant (graphique, repères, page des coauteurs)
@@ -25,7 +24,6 @@
       remplirTypes();
       lireAdresse();
       dessinerPeriodes();
-      dessinerReperes();
       afficher();
     })
     .catch((e) => {
@@ -232,41 +230,6 @@
     choix.annee = choix.annee === z.dataset.annee ? "" : z.dataset.annee;
     choix.periode = "";
     afficher();
-  });
-
-  // ---------------------------------------------------------------- en un coup d'œil
-
-  function dessinerReperes() {
-    const revues = {}, langues = {};
-    toutes.forEach((p) => {
-      if (p.revue && !DEPOT.test(p.revue)) revues[p.revue] = (revues[p.revue] || 0) + 1;
-      if (p.langue) langues[p.langue] = (langues[p.langue] || 0) + 1;
-    });
-    const premieres = Object.entries(revues).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    const plus = premieres.length ? premieres[0][1] : 1;
-    $("#reperes-revues").innerHTML = premieres.map(([r, n]) => `
-      <li><button type="button" class="repere-revue" data-revue="${echapper(r)}">
-        <i>${echapper(r)}</i><span class="jauge"><span style="width:${Math.round((n / plus) * 100)}%"></span></span><span class="nombre">${n}</span>
-      </button></li>`).join("");
-
-    const total = Object.values(langues).reduce((a, b) => a + b, 0) || 1;
-    $("#reperes-langues").innerHTML = Object.entries(langues).sort((a, b) => b[1] - a[1]).map(([l, n]) =>
-      `<li><span>${echapper(l)}</span><span class="jauge"><span style="width:${Math.max(1, Math.round((n / total) * 100))}%"></span></span><span class="nombre">${n}</span></li>`).join("");
-
-    const libres = toutes.filter((p) => p.lien_pdf).length;
-    $("#reperes-libre").innerHTML = `<b>${libres}</b> publications sur ${toutes.length} ont un PDF librement accessible.
-      <button type="button" class="lien-bouton" id="voir-libres">Les afficher</button>`;
-  }
-
-  $("#reperes").addEventListener("click", (e) => {
-    const r = e.target.closest(".repere-revue");
-    if (r) {
-      choix.revue = choix.revue === r.dataset.revue ? "" : r.dataset.revue;
-    } else if (e.target.id === "voir-libres") {
-      champs.pdf.checked = true;
-    } else return;
-    afficher();
-    $("#compte").scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   // ---------------------------------------------------------------- événements
