@@ -57,8 +57,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: main   # avec les nouveautés qui viennent d'être enregistrées
+      # un nom par tentative : « Re-run » ne bute pas sur l'archive de la tentative précédente
       - uses: actions/upload-pages-artifact@v5
         with:
           path: .
+          name: github-pages-${{ github.run_attempt }}
       - id: deploiement
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}

@@ -547,7 +547,12 @@ def id_tableau():
 def lire_tableau(sheet_id):
     r = get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export", params={"format": "csv", "gid": 0})
     r.encoding = "utf-8"
-    return list(csv.DictReader(r.text.splitlines()))
+    lecteur = csv.DictReader(r.text.splitlines())
+    manquantes = [c for c in ("id", "titre", "doi", "pmid") if c not in (lecteur.fieldnames or [])]
+    if manquantes:
+        sys.exit(f"La ligne d'en-tête du tableau est abîmée (colonnes absentes : {', '.join(manquantes)}). "
+                 f"En-tête lu : {lecteur.fieldnames}")
+    return list(lecteur)
 
 
 def acces_script():

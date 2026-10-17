@@ -203,6 +203,7 @@ function lierPdfs() {
   try {
     const classeur = SpreadsheetApp.getActive();
     const pub = classeur.getSheetByName(ONGLET);
+    protegerEntete(pub);
     let entete = pub.getRange(1, 1, 1, pub.getLastColumn()).getValues()[0].map(String);
     if (!entete.includes('pdf_drive')) {
       pub.getRange(1, entete.length + 1).setValue('pdf_drive').setFontWeight('bold').setBackground('#e3f0ef');
@@ -342,4 +343,11 @@ function texteDuPdf(fichier) {
   } finally {
     if (copie) DriveApp.getFileById(copie.id).setTrashed(true);
   }
+}
+
+/** Avertissement avant toute modification de la ligne d'en-tête (le site et la collecte en dépendent). */
+function protegerEntete(feuille) {
+  const deja = feuille.getProtections(SpreadsheetApp.ProtectionType.RANGE).some((p) => p.getRange().getRow() === 1);
+  if (!deja) feuille.getRange('1:1').protect().setDescription('En-tête : ne pas modifier').setWarningOnly(true);
+  if (String(feuille.getRange(1, 1).getValue()) !== 'id') Logger.log('Attention : la cellule A1 doit contenir « id ».');
 }
