@@ -1,0 +1,223 @@
+:root {
+  --fond: #faf8f4;
+  --surface: #ffffff;
+  --encre: #22262a;
+  --encre-2: #4f565c;
+  --encre-3: #7a8187;
+  --trait: #e4e0d8;
+  --accent: #1d6b70;
+  --accent-clair: #e3f0ef;
+  --barre: #4f9a9c;
+  --barre-active: #1d6b70;
+  --chaud: #c8643b;
+  --ligne-survol: #f5f1ea;
+  /* pastilles de type : fond / texte */
+  --p-article: #e3f0ef;   --p-article-t: #155257;
+  --p-revue: #e4ecf7;     --p-revue-t: #24497a;
+  --p-lettre: #f8ecd9;    --p-lettre-t: #7a4a12;
+  --p-cas: #f6e3e6;       --p-cas-t: #84303f;
+  --p-livre: #e6f1e1;     --p-livre-t: #35612a;
+  --p-autre: #ece9f3;     --p-autre-t: #4d4470;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #16191b; --surface: #1d2124; --encre: #e8e6e1; --encre-2: #b5b9bc; --encre-3: #8a9094;
+    --trait: #2f3539; --accent: #6cc0c2; --accent-clair: #1f3637; --barre: #3f8486; --barre-active: #7fd0d1;
+    --chaud: #e8906a; --ligne-survol: #23282b;
+    --p-article: #1f3637; --p-article-t: #a6dcdc; --p-revue: #1f2b3d; --p-revue-t: #a9c4ea;
+    --p-lettre: #3a2d1a; --p-lettre-t: #ebc58f; --p-cas: #3b2328; --p-cas-t: #eeb0bb;
+    --p-livre: #24331f; --p-livre-t: #b5d9a6; --p-autre: #2b2838; --p-autre-t: #c6bdea;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #16191b; --surface: #1d2124; --encre: #e8e6e1; --encre-2: #b5b9bc; --encre-3: #8a9094;
+  --trait: #2f3539; --accent: #6cc0c2; --accent-clair: #1f3637; --barre: #3f8486; --barre-active: #7fd0d1;
+  --chaud: #e8906a; --ligne-survol: #23282b;
+  --p-article: #1f3637; --p-article-t: #a6dcdc; --p-revue: #1f2b3d; --p-revue-t: #a9c4ea;
+  --p-lettre: #3a2d1a; --p-lettre-t: #ebc58f; --p-cas: #3b2328; --p-cas-t: #eeb0bb;
+  --p-livre: #24331f; --p-livre-t: #b5d9a6; --p-autre: #2b2838; --p-autre-t: #c6bdea;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--encre);
+  font: 16px/1.55 "Source Sans 3", system-ui, sans-serif;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+a:hover { color: var(--chaud); }
+.largeur { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+/* en-tête */
+.entete {
+  background: var(--surface);
+  border-bottom: 1px solid var(--trait);
+  border-top: 4px solid var(--accent);
+  padding: 28px 0 0;
+}
+.surtitre {
+  margin: 0;
+  color: var(--chaud);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 4px 0 18px;
+  font: 600 clamp(28px, 5vw, 40px)/1.15 "Source Serif 4", Georgia, serif;
+}
+h2 {
+  margin: 0;
+  font: 600 18px/1.3 "Source Serif 4", Georgia, serif;
+}
+.onglets { display: flex; gap: 22px; flex-wrap: wrap; }
+.onglets a, .onglets span {
+  padding: 8px 0 10px;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.onglets a[aria-current="page"] { color: var(--encre); border-color: var(--accent); }
+.onglets .bientot { color: var(--encre-3); font-weight: 400; cursor: default; }
+
+.intro { max-width: 720px; margin: 28px 0 8px; color: var(--encre-2); }
+
+/* graphique par année */
+.annees {
+  margin: 24px 0;
+  padding: 18px 18px 10px;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: 10px;
+}
+.annees-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.graphique { margin-top: 12px; }
+.graphique svg { display: block; width: 100%; height: auto; overflow: visible; }
+.graphique .barre { fill: var(--barre); cursor: pointer; }
+.graphique .barre.active { fill: var(--barre-active); }
+.graphique.filtre .barre:not(.active) { opacity: .35; }
+.graphique .zone { fill: transparent; cursor: pointer; }
+.graphique .zone:hover + .barre { fill: var(--barre-active); }
+.graphique .axe { fill: var(--encre-3); font-size: 11px; }
+.graphique .grille { stroke: var(--trait); stroke-width: 1; }
+.aide { margin: 6px 0 0; color: var(--encre-3); font-size: 13px; }
+.lien-bouton {
+  background: none; border: 0; padding: 0; color: var(--accent);
+  font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer;
+}
+
+/* filtres */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  margin: 20px 0 8px;
+}
+.champ { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--encre-2); font-weight: 600; }
+.champ.recherche { flex: 1 1 280px; }
+.champ input, .champ select {
+  font: inherit; font-size: 15px; font-weight: 400; color: var(--encre);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: 7px;
+  padding: 8px 10px;
+  min-height: 40px;
+}
+.champ input:focus, .champ select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.case { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--encre-2); min-height: 40px; }
+.case input { accent-color: var(--accent); width: 16px; height: 16px; }
+.compte { color: var(--encre-3); font-size: 14px; margin: 8px 0 10px; }
+
+/* tableau */
+.tableau-cadre {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.tableau { width: 100%; border-collapse: collapse; }
+.tableau th {
+  text-align: left;
+  font-size: 13px;
+  color: var(--encre-2);
+  border-bottom: 1px solid var(--trait);
+  background: var(--surface);
+  padding: 0;
+  position: sticky; top: 0;
+}
+.tableau th button {
+  display: block; width: 100%; text-align: left;
+  background: none; border: 0; padding: 12px 14px;
+  font: inherit; font-weight: 600; color: inherit; cursor: pointer;
+}
+.tableau th.col-liens { padding: 12px 14px; font-weight: 600; }
+.tableau th button::after { content: " ↕"; color: var(--trait); }
+.tableau th[aria-sort="ascending"] button::after { content: " ↑"; color: var(--accent); }
+.tableau th[aria-sort="descending"] button::after { content: " ↓"; color: var(--accent); }
+.tableau td { padding: 12px 14px; border-bottom: 1px solid var(--trait); vertical-align: top; }
+.tableau tbody tr:last-child td { border-bottom: 0; }
+.tableau tbody tr:hover { background: var(--ligne-survol); }
+.col-annee { width: 76px; }
+.col-revue { width: 22%; }
+.col-type { width: 140px; }
+.col-liens { width: 150px; }
+td.annee { font-variant-numeric: tabular-nums; color: var(--encre-2); font-weight: 600; }
+.titre { font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.4; }
+.auteurs { margin-top: 3px; color: var(--encre-2); font-size: 14px; }
+.auteurs b { color: var(--encre); font-weight: 600; }
+.auteurs .plus { color: var(--accent); cursor: pointer; background: none; border: 0; padding: 0; font: inherit; text-decoration: underline; }
+.note { margin-top: 4px; font-size: 13px; color: var(--chaud); }
+td.revue { font-size: 14px; color: var(--encre-2); }
+td.revue i { color: var(--encre); font-style: italic; }
+.pastille {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  background: var(--p-autre); color: var(--p-autre-t);
+}
+.pastille.article { background: var(--p-article); color: var(--p-article-t); }
+.pastille.revue { background: var(--p-revue); color: var(--p-revue-t); }
+.pastille.lettre { background: var(--p-lettre); color: var(--p-lettre-t); }
+.pastille.cas { background: var(--p-cas); color: var(--p-cas-t); }
+.pastille.livre { background: var(--p-livre); color: var(--p-livre-t); }
+.liens { display: flex; flex-wrap: wrap; gap: 6px; }
+.liens a {
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  padding: 3px 8px; border-radius: 6px;
+  border: 1px solid var(--trait); color: var(--encre-2);
+}
+.liens a:hover { border-color: var(--accent); color: var(--accent); }
+.liens a.pdf { background: var(--chaud); border-color: var(--chaud); color: #fff; }
+.liens a.pdf:hover { filter: brightness(1.08); color: #fff; }
+.vide { padding: 32px 14px; text-align: center; color: var(--encre-3); }
+
+.infobulle {
+  position: fixed; z-index: 10; pointer-events: none;
+  background: var(--encre); color: var(--fond);
+  padding: 6px 10px; border-radius: 6px; font-size: 13px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.15);
+}
+
+.pied { margin-top: 40px; padding: 22px 0 40px; border-top: 1px solid var(--trait); color: var(--encre-3); font-size: 14px; }
+
+/* téléphone : chaque publication devient une fiche */
+@media (max-width: 760px) {
+  .tableau thead { display: none; }
+  .tableau, .tableau tbody, .tableau tr, .tableau td { display: block; width: 100%; }
+  .tableau tr { padding: 14px; border-bottom: 1px solid var(--trait); display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; }
+  .tableau td { padding: 0; border: 0; }
+  td.annee { grid-column: 1; grid-row: 1; }
+  td.type { grid-column: 2; grid-row: 1; }
+  td.titre-cell, td.revue, td.liens-cell { grid-column: 1 / -1; }
+  .champ.recherche { flex-basis: 100%; }
+}
