@@ -61,7 +61,7 @@ window.FV = (function () {
   function preparer(p, nbCitations, nomComplet) {
     const auteurs = (p.auteurs || "").split(/\s*,\s*/).filter(Boolean);
     p._auteurs = auteurs;
-    p._noms = [...new Set(auteurs.map(nomComplet))];
+    p._noms = [...new Set(auteurs.map(nomComplet))].filter((n) => n !== "-");  // « - » dans coauteurs.csv : pas une personne
     p._annee = parseInt(p.annee, 10) || 0;
     p._citations = Number.isFinite(nbCitations[p.id]) ? nbCitations[p.id] : null;
     p.type = p.type || "article";
