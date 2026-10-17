@@ -40,10 +40,10 @@
       <tr>
         <td><a href="./?coauteur=${encodeURIComponent(g.nom)}">${echapper(g.nom)}</a></td>
         <td class="nombre">${g.n}</td>
-        <td class="periode-cell">
+        <td class="periode-cell">${g.a ? `<div class="periode-boite">
           <span class="ligne-vie" aria-hidden="true"><span style="left:${((g.de - min) / duree) * 100}%;width:${Math.max(1.5, ((g.a - g.de + 1) / duree) * 100)}%"></span></span>
           <span class="periode-texte">${g.de === g.a ? g.de : `${g.de} – ${g.a}`}</span>
-        </td>
+        </div>` : ""}</td>
       </tr>`).join("") : `<tr><td colspan="3" class="vide">Aucun coauteur ne correspond.</td></tr>`;
     document.querySelectorAll("#tableau th[data-tri]").forEach((th) =>
       th.setAttribute("aria-sort", th.dataset.tri === tri.cle ? (tri.sens > 0 ? "ascending" : "descending") : "none"));

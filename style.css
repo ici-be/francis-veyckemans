@@ -291,7 +291,8 @@ td.revue i { color: var(--encre); font-style: italic; }
 .col-n { width: 130px; }
 .col-periode { width: 45%; }
 .tableau.coauteurs td.nombre { font-weight: 600; }
-.periode-cell { display: flex; align-items: center; gap: 12px; }
+/* la cellule reste une cellule de tableau (sinon ses bordures se décalent) : le flex est à l'intérieur */
+.periode-boite { display: flex; align-items: center; gap: 12px; }
 .ligne-vie { position: relative; flex: 1; height: 10px; border-radius: 5px; background: var(--ligne-survol); }
 .ligne-vie span { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--barre); }
 .periode-texte { width: 92px; flex: none; font-size: 13px; color: var(--encre-2); font-variant-numeric: tabular-nums; }
