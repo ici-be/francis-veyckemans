@@ -3,6 +3,7 @@
   "use strict";
 
   const { $, sansAccents, echapper, estAvis, pluriel } = FV;
+  const { t } = I18N;
   const corps = $("#tableau tbody");
   let gens = [], min = 0, max = 0;
   let tri = { cle: "n", sens: -1 };
@@ -20,11 +21,11 @@
       min = Math.min(...annees);
       max = Math.max(...annees);
       const fideles = gens.filter((g) => g.n > 1).length;
-      $("#intro").textContent = `${gens.length} coauteurs, dont ${fideles} pour au moins deux publications. Un nom mène à la liste des publications communes.`;
+      $("#intro").textContent = t("{n} coauteurs, dont {f} pour au moins deux publications. Un nom mène à la liste des publications communes.", { n: gens.length, f: fideles });
       afficher();
     })
     .catch((e) => {
-      $("#intro").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
+      $("#intro").textContent = t("La liste n'a pas pu être chargée ({e}).", { e: e.message });
     });
 
   function afficher() {
@@ -38,13 +39,13 @@
     const duree = max - min + 1;
     corps.innerHTML = liste.length ? liste.map((g) => `
       <tr>
-        <td><a href="./?coauteur=${encodeURIComponent(g.nom)}">${echapper(g.nom)}</a></td>
+        <td><a href="${I18N.lien("./?coauteur=" + encodeURIComponent(g.nom))}">${echapper(g.nom)}</a></td>
         <td class="nombre">${g.n}</td>
         <td class="periode-cell">${g.a ? `<div class="periode-boite">
           <span class="ligne-vie" aria-hidden="true"><span style="left:${((g.de - min) / duree) * 100}%;width:${Math.max(1.5, ((g.a - g.de + 1) / duree) * 100)}%"></span></span>
           <span class="periode-texte">${g.de === g.a ? g.de : `${g.de} – ${g.a}`}</span>
         </div>` : ""}</td>
-      </tr>`).join("") : `<tr><td colspan="3" class="vide">Aucun coauteur ne correspond.</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="3" class="vide">${t("Aucun coauteur ne correspond.")}</td></tr>`;
     document.querySelectorAll("#tableau th[data-tri]").forEach((th) =>
       th.setAttribute("aria-sort", th.dataset.tri === tri.cle ? (tri.sens > 0 ? "ascending" : "descending") : "none"));
   }

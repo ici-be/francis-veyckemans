@@ -3,6 +3,7 @@
   "use strict";
 
   const { $, sansAccents, echapper, estAvis, pluriel } = FV;
+  const { t } = I18N;
   let avis = [];
   let commentes = {};  // id de l'avis → article commenté (donnees/lectures.csv)
 
@@ -16,18 +17,19 @@
       avis = liste.filter(estAvis).sort((a, b) => b._annee - a._annee || sansAccents(a._titre).localeCompare(sansAccents(b._titre)));
       const annees = avis.map((p) => p._annee).filter(Boolean);
       if (avis.length)
-        $("#intro").textContent = `${pluriel(avis.length, "article")} recommandé${avis.length > 1 ? "s" : ""} et commenté${avis.length > 1 ? "s" : ""} pour Faculty Opinions (F1000), de ${Math.min(...annees)} à ${Math.max(...annees)}.`;
+        $("#intro").textContent = t(avis.length > 1 ? "{n} recommandés et commentés pour Faculty Opinions (F1000), de {de} à {a}." : "{n} recommandé et commenté pour Faculty Opinions (F1000), de {de} à {a}.",
+          { n: pluriel(avis.length, "article"), de: Math.min(...annees), a: Math.max(...annees) });
       afficher();
     })
     .catch((e) => {
-      $("#compte").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
+      $("#compte").textContent = t("La liste n'a pas pu être chargée ({e}).", { e: e.message });
     });
 
   function afficher() {
     const mots = sansAccents($("#recherche").value).split(/\s+/).filter(Boolean);
     const texte = (p) => sansAccents([p._titre, ...Object.values(commentes[p.id] || {})].join(" "));
     const liste = avis.filter((p) => mots.every((m) => texte(p).includes(m)));
-    $("#compte").textContent = liste.length === avis.length ? pluriel(avis.length, "lecture") : `${liste.length} sur ${avis.length}`;
+    $("#compte").textContent = liste.length === avis.length ? pluriel(avis.length, "lecture") : t("{n} sur {total}", { n: liste.length, total: avis.length });
     const parAnnee = {};
     liste.forEach((p) => (parAnnee[p.annee || "—"] = parAnnee[p.annee || "—"] || []).push(p));
     $("#lectures").innerHTML = Object.keys(parAnnee).sort((a, b) => b.localeCompare(a)).map((a) => `
@@ -46,8 +48,8 @@
     const ref = [c.auteurs, c.revue ? `<i>${echapper(c.revue)}</i>` : "", c.annee].filter(Boolean)
       .map((x, i) => (i === 1 ? x : echapper(x))).join(", ");
     const liens = [
-      p.lien_info && lien(p.lien_info, "Lire l'avis"),
-      c.doi && lien(`https://doi.org/${c.doi}`, "Article commenté"),
+      p.lien_info && lien(p.lien_info, t("Lire l'avis")),
+      c.doi && lien(`https://doi.org/${c.doi}`, t("Article commenté")),
       c.pmid && lien(`https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(c.pmid)}/`, "PubMed"),
       c.pdf && lien(c.pdf, "PDF"),
     ].filter(Boolean);

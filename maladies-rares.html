@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="i18n.js"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d6b70'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' fill='white' text-anchor='middle'%3EFV%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -30,7 +31,7 @@
 
   <main class="largeur page">
     <h1>Maladies rares</h1>
-    <p class="intro">
+    <p class="intro" data-t="mr-intro">
       <cite>Syndromes &amp; maladies rares en pédiatrie : anesthésie</cite> est une base de données
       tenue avec Jean-Louis Scholtes. Elle décrit de manière concise les aspects physiopathologiques
       et anesthésiques de plusieurs milliers de syndromes et maladies rares de l’enfant, pour aider
@@ -38,7 +39,7 @@
     </p>
 
     <div class="mr-acces">
-      <a class="mr-carte cadre" href="https://sites.uclouvain.be/anesthweekly/MRP/" hreflang="fr">
+      <a class="mr-carte cadre" href="https://sites.uclouvain.be/anesthweekly/MRP/" hreflang="fr" lang="fr">
         <span class="mr-langue">Français</span>
         <span class="mr-titre">Syndromes &amp; maladies rares en pédiatrie : anesthésie</span>
         <span class="mr-lien">Ouvrir la base de données ↗</span>
@@ -52,7 +53,7 @@
 
     <section class="mr-notes">
       <h2>À savoir</h2>
-      <ul>
+      <ul data-t="mr-notes">
         <li>Chaque fiche se retrouve par la liste des chapitres, l’index alphabétique ou la recherche par mots.</li>
         <li>Les fiches ne font pas l’objet d’une relecture par des pairs : c’est un outil d’aide à la décision,
           complémentaire d’<a href="https://www.orpha.net/" hreflang="fr">Orphanet</a>,
@@ -60,7 +61,7 @@
           et d’<a href="https://www.omim.org/" hreflang="en">OMIM</a>.</li>
         <li>Remarques et suggestions sont les bienvenues auprès des auteurs.</li>
       </ul>
-      <p>Sur ce site : les <a href="./?q=rare">publications</a> et les
+      <p data-t="mr-site">Sur ce site : les <a href="./?q=rare">publications</a> et les
         <a href="conferences.html?q=rare">conférences</a> consacrées aux maladies rares.</p>
     </section>
   </main>

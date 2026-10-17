@@ -3,6 +3,7 @@ window.FV = (function () {
   "use strict";
 
   const CONF = window.CONFIG || {};
+  const { t } = I18N;
   const $ = (sel) => document.querySelector(sel);
   const sansAccents = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const echapper = (s) => (s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -11,7 +12,7 @@ window.FV = (function () {
   const oui = (v) => /^(oui|x|1|true|vrai)$/i.test((v || "").trim());
   const COLLECTIF = /group|network|collaborat|investigator|consortium|society|committee|team|study/i;
   const lireCSV = (texte) => Papa.parse(texte || "", { header: true, skipEmptyLines: true }).data;
-  const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
+  const pluriel = I18N.pluriel;
 
   // ---------------------------------------------------------------- chargement
 
@@ -20,7 +21,7 @@ window.FV = (function () {
     const copie = () => fetch("donnees/publications.csv", { cache: "no-cache" }).then((r) => {
       if (!r.ok) throw new Error("erreur " + r.status);
       const date = r.headers.get("Last-Modified");
-      if (date && $("#maj")) $("#maj").textContent = "copie du " + new Date(date).toLocaleDateString("fr-BE", { year: "numeric", month: "long", day: "numeric" });
+      if (date && $("#maj")) $("#maj").textContent = t("copie du {date}", { date: new Date(date).toLocaleDateString(I18N.locale, { year: "numeric", month: "long", day: "numeric" }) });
       return r.text();
     });
     if (!CONF.tableau) return copie();
@@ -31,7 +32,7 @@ window.FV = (function () {
       })
       .then((texte) => {
         if (!/^id,/.test(texte)) throw new Error("tableau illisible");
-        if ($("#maj")) $("#maj").textContent = "en direct du tableau";
+        if ($("#maj")) $("#maj").textContent = t("en direct du tableau");
         return texte;
       })
       .catch(copie);
@@ -67,7 +68,7 @@ window.FV = (function () {
     p.type = p.type || "article";
     if (p.pdf_drive) p.lien_pdf = p.pdf_drive;  // PDF déposé dans le dossier Google Drive : prioritaire
     p._titre = estAvis(p) ? p.titre.replace(/^Faculty Opinions recommendation of\s*/i, "") : p.titre;
-    p._texte = sansAccents([p.titre, p.auteurs, p._noms.join(" "), p.revue, p.annee, p.type, p.notes, p.doi, p.pmid].join(" "));
+    p._texte = sansAccents([p.titre, p.auteurs, p._noms.join(" "), p.revue, p.annee, p.type, I18N.valeur(p.type), p.notes, p.doi, p.pmid].join(" "));
     return p;
   }
 
@@ -98,12 +99,12 @@ window.FV = (function () {
     const l = [];
     if (p.lien_pdf) l.push(`<a class="pdf" href="${echapper(p.lien_pdf)}" target="_blank" rel="noopener">PDF</a>`);
     if (p.lien_info) {
-      const nom = /pubmed/.test(p.lien_info) ? "PubMed" : /doi\.org/.test(p.lien_info) ? "Article" : "Fiche";
-      l.push(`<a href="${echapper(p.lien_info)}" target="_blank" rel="noopener" title="Page de l'article">${nom}</a>`);
+      const nom = /pubmed/.test(p.lien_info) ? "PubMed" : /doi\.org/.test(p.lien_info) ? "Article" : t("Fiche");
+      l.push(`<a href="${echapper(p.lien_info)}" target="_blank" rel="noopener" title="${t("Page de l'article")}">${nom}</a>`);
     }
     if (p.pmid && !/pubmed/.test(p.lien_info || ""))
       l.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(p.pmid)}/" target="_blank" rel="noopener">PubMed</a>`);
-    if (!estAvis(p)) l.push(`<button type="button" class="citer" data-id="${echapper(p.id)}" aria-expanded="false">Citer</button>`);
+    if (!estAvis(p)) l.push(`<button type="button" class="citer" data-id="${echapper(p.id)}" aria-expanded="false">${t("Citer")}</button>`);
     return `<div class="liens">${l.join("")}</div>`;
   }
 
@@ -126,7 +127,7 @@ window.FV = (function () {
     if (p.volume) source += `, ${p.volume}`;
     if (p.numero) source += `(${p.numero})`;
     if (p.pages) source += `, ${p.pages}`;
-    return `${a} (${p.annee || "s.d."}). ${p.titre}.` + (source ? ` ${source}.` : "") + (p.doi ? ` https://doi.org/${p.doi}` : "");
+    return `${a} (${p.annee || t("s.d.")}). ${p.titre}.` + (source ? ` ${source}.` : "") + (p.doi ? ` https://doi.org/${p.doi}` : "");
   }
 
   function cleBib(p) {
@@ -161,7 +162,7 @@ window.FV = (function () {
     const boutons = Object.keys(FORMATS).map((f) =>
       `<button type="button" class="format" aria-pressed="${f === formatChoisi}" data-format="${f}">${f}</button>`).join("");
     return `<div class="citation" data-id="${echapper(p.id)}">
-      <div class="citation-tete">${boutons}<button type="button" class="copier">Copier</button></div>
+      <div class="citation-tete">${boutons}<button type="button" class="copier">${t("Copier")}</button></div>
       <pre>${echapper(FORMATS[formatChoisi](p))}</pre></div>`;
   }
 
@@ -185,8 +186,8 @@ window.FV = (function () {
         panneau.outerHTML = panneauCitation(trouver(panneau.dataset.id));
       } else {
         navigator.clipboard.writeText(panneau.querySelector("pre").textContent).then(() => {
-          b.textContent = "Copié";
-          setTimeout(() => (b.textContent = "Copier"), 1500);
+          b.textContent = t("Copié");
+          setTimeout(() => (b.textContent = t("Copier")), 1500);
         });
       }
     });

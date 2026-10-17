@@ -3,6 +3,7 @@
 window.FVCarte = (function () {
   "use strict";
 
+  const { t, valeur } = I18N;
   const echapper = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let chargement = null;
   // carte réduite par défaut (pour voir le tableau en dessous) ; le choix du visiteur est retenu
@@ -41,10 +42,10 @@ window.FVCarte = (function () {
     return lieux.map((l) => {
       const [x, y] = projeter(carte, l.lon, l.lat);
       const d = taille(l.n);
-      const etiquette = etiquettes(l) ? `<span class="carte-nom" style="left:${x}%;top:${y}%;--decalage:${d / 2 + 4}px">${echapper(l.ville)}</span>` : "";
+      const etiquette = etiquettes(l) ? `<span class="carte-nom" style="left:${x}%;top:${y}%;--decalage:${d / 2 + 4}px">${echapper(valeur(l.ville))}</span>` : "";
       return `<button type="button" class="carte-point${l.ville === choisie ? " choisi" : ""}" data-ville="${echapper(l.ville)}"
         style="left:${x}%;top:${y}%;width:${d}px;height:${d}px;margin:${-d / 2}px 0 0 ${-d / 2}px"
-        aria-label="${echapper(l.ville)}, ${l.n} ${l.n > 1 ? "interventions" : "intervention"}" aria-pressed="${l.ville === choisie}"></button>${etiquette}`;
+        aria-label="${echapper(valeur(l.ville))}, ${I18N.pluriel(l.n, "intervention")}" aria-pressed="${l.ville === choisie}"></button>${etiquette}`;
     }).join("");
   }
 
@@ -75,7 +76,7 @@ window.FVCarte = (function () {
 
   /**
    * lieux : [{ ville, pays, lat, lon, n, details: [texte…] }]
-   * options : { choisie, surChoix(ville ou null), unite: ["intervention", "interventions"] }
+   * options : { choisie, surChoix(ville ou null), unite: ["intervention", "interventions"] (par défaut : « intervention » traduit) }
    */
   function dessiner(conteneur, lieux, options = {}) {
     return charger().then((cartes) => {
@@ -90,7 +91,7 @@ window.FVCarte = (function () {
       const places = new Set([...enEurope, ...ailleurs.flatMap((g) => g.lieux)]);
       const sansCarte = lieux.filter((l) => !places.has(l));
       const choisie = options.choisie || null;
-      const [u1, u2] = options.unite || ["intervention", "interventions"];
+      const [u1, u2] = options.unite || [];
 
       // cadre du zoom Belgique, reporté sur la carte d'Europe
       const [b0, b1] = [projeter(europe, belgique.cadre[0], belgique.cadre[3]), projeter(europe, belgique.cadre[2], belgique.cadre[1])];
@@ -100,7 +101,7 @@ window.FVCarte = (function () {
       // chaque carte : largeur proportionnelle à son rapport largeur/hauteur, d'où des hauteurs égales sur une rangée
       const figure = (carte, classe, contenu, extra = "") => `
         <figure class="carte-fig ${classe}" style="--ratio:${(carte.w / carte.h).toFixed(4)}">
-          <figcaption>${echapper(carte.titre)}</figcaption>
+          <figcaption>${echapper(t(carte.titre))}</figcaption>
           ${fond(carte, contenu, extra)}
         </figure>`;
       const figures = [
@@ -111,14 +112,14 @@ window.FVCarte = (function () {
         ...ailleurs.map((g) => figure(g.r, "carte-petite", points(g.r, g.lieux, choisie, () => true))),
       ].join("");
       const sansCarteHTML = sansCarte.length
-        ? `<p class="carte-sans">Sans position connue : ${sansCarte.map((l) => echapper(l.ville)).join(", ")}.</p>` : "";
+        ? `<p class="carte-sans">${echapper(t("Sans position connue : {lieux}.", { lieux: sansCarte.map((l) => valeur(l.ville)).join(", ") }))}</p>` : "";
       const parVille = Object.fromEntries(lieux.map((l) => [l.ville, l]));
-      const resume = (l) => `<b>${echapper(l.ville)}</b> · ${echapper(l.pays)} · ${l.n} ${l.n > 1 ? u2 : u1}`;
+      const resume = (l) => `<b>${echapper(valeur(l.ville))}</b> · ${echapper(valeur(l.pays))} · ${u2 ? `${l.n} ${l.n > 1 ? u2 : u1}` : I18N.pluriel(l.n, "intervention")}`;
       const choixHTML = choisie && parVille[choisie]
-        ? `<p class="carte-choix">${resume(parVille[choisie])} · <button type="button" class="lien-bouton" data-effacer>toutes les villes</button></p>` : "";
+        ? `<p class="carte-choix">${resume(parVille[choisie])} · <button type="button" class="lien-bouton" data-effacer>${t("toutes les villes")}</button></p>` : "";
 
       const chevron = (haut) => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="${haut ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-      const libelle = () => (grande ? "Réduire la carte" : "Agrandir la carte");
+      const libelle = () => t(grande ? "Réduire la carte" : "Agrandir la carte");
       conteneur.classList.toggle("carte-compacte", !grande);
       conteneur.innerHTML = `
         <button type="button" class="carte-taille" aria-expanded="${grande}" aria-label="${libelle()}" title="${libelle()}">${chevron(grande)}</button>

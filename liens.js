@@ -4,6 +4,7 @@
   "use strict";
 
   const { $, echapper, pluriel } = FV;
+  const { t } = I18N;
   const CONF = window.CONFIG || {};
 
   function telecharger() {
@@ -30,7 +31,10 @@
         .filter((l) => l.url && l.nom && !/^(oui|x|1|true|vrai)$/i.test((l.masquer || "").trim()));
       const groupes = [];
       liens.forEach((l) => {
-        const nom = (l.categorie || "").trim() || "Autres";
+        // site en anglais : colonnes categorie_en et description_en si le tableau les a, sinon le dictionnaire de i18n.js
+        const nom = (I18N.en && (l.categorie_en || "").trim()) || t((l.categorie || "").trim() || "Autres");
+        l._fr = I18N.en && !(l.description_en || "").trim();  // description restée en français
+        if (I18N.en && !l._fr) l.description = l.description_en.trim();
         let g = groupes.find((x) => x.nom === nom);
         if (!g) groupes.push((g = { nom, liens: [] }));
         g.liens.push(l);
@@ -44,13 +48,13 @@
             <li>
               <a href="${echapper(l.url)}" target="_blank" rel="noopener"${l.langue && l.langue !== "français" ? ` hreflang="${{ anglais: "en", italien: "it", néerlandais: "nl", allemand: "de", espagnol: "es" }[l.langue] || ""}"` : ""}>${echapper(l.nom)}</a>
               <span class="liens-domaine">${echapper(domaine(l.url))}</span>
-              ${l.description ? `<p>${echapper(l.description)}</p>` : ""}
+              ${l.description ? `<p${l._fr ? ' lang="fr"' : ""}>${echapper(l.description)}</p>` : ""}
             </li>`).join("")}
           </ul>
         </section>`).join("");
       if (!liens.length) $("#compte").textContent = pluriel(0, "lien");
     })
     .catch((e) => {
-      $("#compte").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
+      $("#compte").textContent = t("La liste n'a pas pu être chargée ({e}).", { e: e.message });
     });
 })();

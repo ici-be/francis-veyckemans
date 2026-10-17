@@ -11,11 +11,11 @@ window.CONFIG = {
   liens: "1944676543",
   // types de l'onglet « Conférences » à ne pas afficher sur le site (ils restent dans le tableau)
   typesConferencesCaches: ["poster"],
-  // périodes affichées au-dessus du graphique (« a » vide : jusqu'à aujourd'hui)
+  // périodes affichées au-dessus du graphique (« a » vide : jusqu'à aujourd'hui ; nom_en : nom sur le site en anglais)
   periodes: [
-    { de: 1985, a: 1995, nom: "Transplantation hépatique" },
-    { de: 1996, a: 2010, nom: "Analgésie, anesthésie locorégionale" },
-    { de: 2011, a: 2021, nom: "Études européennes" },
-    { de: 2022, a: null, nom: "Recommandations" },
+    { de: 1985, a: 1995, nom: "Transplantation hépatique", nom_en: "Liver transplantation" },
+    { de: 1996, a: 2010, nom: "Analgésie, anesthésie locorégionale", nom_en: "Analgesia, regional anaesthesia" },
+    { de: 2011, a: 2021, nom: "Études européennes", nom_en: "European studies" },
+    { de: 2022, a: null, nom: "Recommandations", nom_en: "Guidelines" },
   ],
 };

@@ -3,9 +3,9 @@
   "use strict";
 
   const { $, sansAccents, echapper, estLui, pluriel } = FV;
+  const { t, valeur } = I18N;
   const CONF = window.CONFIG || {};
   const corps = $("#tableau tbody");
-  const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   let toutes = [];
   let tri = { cle: "date", sens: -1 };
   let villeChoisie = null;  // filtre posé en cliquant sur la carte
@@ -21,7 +21,7 @@
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("erreur " + r.status))))
       .then((texte) => {
         if (!/^id,/.test(texte)) throw new Error("onglet illisible");
-        if ($("#maj")) $("#maj").textContent = "— en direct du tableau";
+        if ($("#maj")) $("#maj").textContent = "— " + t("en direct du tableau");
         return texte;
       })
       .catch(copie);
@@ -40,22 +40,23 @@
         .map((c) => {
           c.type = c.type || "conférence";
           c._ville = (lieux[(c.lieu || "").trim()] || {}).ville || (c.lieu || "").trim();
-          c._texte = sansAccents([c.titre, c.congres, c.lieu, c.orateurs, c.date, c.type, c.notes].join(" "));
+          c._lieu = lieuLisible(c.lieu);
+          c._texte = sansAccents([c.titre, c.congres, c.lieu, c._lieu, c.orateurs, c.date, c.type, valeur(c.type), c.notes].join(" "));
           return c;
         });
       const compte = {};
       toutes.forEach((c) => (compte[c.type] = (compte[c.type] || 0) + 1));
       Object.keys(compte).sort((a, b) => compte[b] - compte[a])
-        .forEach((t) => $("#type").add(new Option(`${t} (${compte[t]})`, t)));
+        .forEach((type) => $("#type").add(new Option(`${valeur(type)} (${compte[type]})`, type)));
       const annees = toutes.map((c) => parseInt(c.date, 10)).filter(Boolean);
       if (annees.length)
-        $("#intro").textContent = `${pluriel(toutes.length, "intervention")}, de ${Math.min(...annees)} à ${Math.max(...annees)}. La liste est encore incomplète.`;
+        $("#intro").textContent = t("{n}, de {de} à {a}. La liste est encore incomplète.", { n: pluriel(toutes.length, "intervention"), de: Math.min(...annees), a: Math.max(...annees) });
       $("#recherche").value = new URLSearchParams(location.search).get("q") || "";  // lien « conferences.html?q=… »
       afficher();
       dessinerCarte();
     })
     .catch((e) => {
-      $("#compte").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
+      $("#compte").textContent = t("La liste n'a pas pu être chargée ({e}).", { e: e.message });
     });
 
   // un point par ville, avec ses interventions (année et congrès)
@@ -80,11 +81,18 @@
     }).catch(() => ($("#carte").hidden = true));
   }
 
-  // « 2015-11-13 » → « 13 nov. 2015 » ; une année seule reste telle quelle
+  // lieu tel qu'écrit dans le tableau ; en anglais, « ville, pays » traduits d'après donnees/lieux.csv
+  function lieuLisible(lieu) {
+    const l = lieux[(lieu || "").trim()];
+    if (!I18N.en || !l || !l.ville) return lieu || "";
+    return [valeur(l.ville), l.pays && l.pays !== l.ville ? valeur(l.pays) : ""].filter(Boolean).join(", ");
+  }
+
+  // « 2015-11-13 » → « 13 nov. 2015 » (« 13 Nov 2015 » en anglais) ; une année seule reste telle quelle
   function dateLisible(d) {
     const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(d || "");
     if (!m) return echapper(d) || "—";
-    return `${m[3] ? parseInt(m[3], 10) + " " : ""}${MOIS[parseInt(m[2], 10) - 1]} ${m[1]}`;
+    return `${m[3] ? parseInt(m[3], 10) + " " : ""}${I18N.mois(parseInt(m[2], 10) - 1)} ${m[1]}`;
   }
 
   function orateursHTML(c) {
@@ -101,9 +109,9 @@
   function liensHTML(c) {
     const lien = (url, texte, cls) => `<a${cls ? ` class="${cls}"` : ""} href="${echapper(url)}" target="_blank" rel="noopener">${texte}</a>`;
     return `<div class="liens">${[
-      c.lien_diapos && lien(c.lien_diapos, "Diapos", "pdf"),
-      c.lien_video && lien(c.lien_video, "Vidéo"),
-      c.lien_info && lien(c.lien_info, "Fiche"),
+      c.lien_diapos && lien(c.lien_diapos, t("Diapos"), "pdf"),
+      c.lien_video && lien(c.lien_video, t("Vidéo")),
+      c.lien_info && lien(c.lien_info, t("Fiche")),
     ].filter(Boolean).join("")}</div>`;
   }
 
@@ -115,8 +123,8 @@
     const { cle, sens } = tri;
     const val = (c) => sansAccents(c[cle]);
     liste.sort((a, b) => (val(a) < val(b) ? -sens : val(a) > val(b) ? sens : (b.date || "").localeCompare(a.date || "")));
-    $("#compte").textContent = (liste.length === toutes.length ? pluriel(toutes.length, "intervention") : `${liste.length} sur ${toutes.length}`)
-      + (villeChoisie ? ` · ${villeChoisie}` : "");
+    $("#compte").textContent = (liste.length === toutes.length ? pluriel(toutes.length, "intervention") : t("{n} sur {total}", { n: liste.length, total: toutes.length }))
+      + (villeChoisie ? ` · ${valeur(villeChoisie)}` : "");
     corps.innerHTML = liste.length ? liste.map((c) => `
       <tr>
         <td class="annee">${dateLisible(c.date)}</td>
@@ -125,9 +133,9 @@
           ${orateursHTML(c)}
           ${c.notes ? `<div class="note">${echapper(c.notes)}</div>` : ""}
         </td>
-        <td class="revue">${c.congres ? `<i>${echapper(c.congres)}</i>` : ""}${c.lieu ? `<div>${echapper(c.lieu)}</div>` : ""}</td>
+        <td class="revue">${c.congres ? `<i>${echapper(c.congres)}</i>` : ""}${c._lieu ? `<div>${echapper(c._lieu)}</div>` : ""}</td>
         <td class="liens-cell">${liensHTML(c)}</td>
-      </tr>`).join("") : `<tr><td colspan="4" class="vide">Aucune intervention ne correspond.</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="4" class="vide">${t("Aucune intervention ne correspond.")}</td></tr>`;
     document.querySelectorAll("#tableau th[data-tri]").forEach((th) =>
       th.setAttribute("aria-sort", th.dataset.tri === tri.cle ? (tri.sens > 0 ? "ascending" : "descending") : "none"));
   }

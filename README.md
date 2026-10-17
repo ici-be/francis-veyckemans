@@ -8,6 +8,7 @@ Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coa
 | Fichier | Rôle |
 |---|---|
 | `index.html`, `themes.html`, `lectures.html`, `coauteurs.html` | les pages (aucune compilation nécessaire) ; chacune a son script `.js` du même nom (`app.js` pour la première) |
+| `i18n.js` | langue du site : français par défaut, anglais avec `?lang=en` ; dictionnaire des textes anglais et bouton FR / EN de l'en-tête |
 | `commun.js`, `style.css` | chargement des données, boutons « Citer » et export BibTeX / RIS ; mise en page |
 | **tableau Google Sheets** | **la liste des publications** : c'est là qu'on corrige ; le site le lit en direct |
 | `donnees/publications.csv` | copie de secours du tableau (mise à jour chaque lundi), utilisée si Google est injoignable |
@@ -15,7 +16,7 @@ Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coa
 | `outils/tableau.gs` | script du tableau : reçoit les envois de `collecter.py` (à coller dans Apps Script) |
 | `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex), réécrit par chaque collecte |
 | `donnees/coauteurs.csv` | forme complète « Nom Prénom » des variantes de noms (`alias,nom`) : complété par la collecte, corrigeable à la main (une ligne corrigée n'est plus modifiée) ; `nom` = `-` retire de la page Coauteurs ce qui n'est pas une personne (pays, association…) |
-| `donnees/themes.csv` | les thèmes : nom, description, mots cherchés dans les titres (séparés par `;`, sans accents ni majuscules) |
+| `donnees/themes.csv` | les thèmes : nom, description (et leur version anglaise `theme_en`, `description_en`), mots cherchés dans les titres (séparés par `;`, sans accents ni majuscules) |
 | `carte.js`, `cartes/` | carte des lieux (Europe, Belgique, hors d'Europe) et ses fonds vectoriels (Natural Earth) |
 | `config.js` | identifiant du tableau ; les quatre périodes affichées au-dessus du graphique |
 | `.github/workflows/publier.yml` | publie le site à chaque push, et lance la collecte chaque lundi |
@@ -108,6 +109,17 @@ personnes), `url`, `notes`, `masquer`. Une vidéo YouTube s'affiche avec sa vign
 La page Liens lit `donnees/liens.csv` (ou l'onglet **« Liens »** du tableau, une fois installé avec la fonction
 `installerLiens` d'Apps Script et son gid mis dans `config.js`, ligne `liens:`). Colonnes : `id` (code unique),
 `categorie` (les rubriques s'affichent dans l'ordre où elles apparaissent), `nom`, `description`, `url`, `langue`, `masquer`.
+Colonnes facultatives pour le site en anglais : `description_en`, et `categorie_en` pour une rubrique absente du dictionnaire de `i18n.js`
+(sinon la description française s'affiche).
+
+## Site en anglais
+
+Le site s'ouvre en français ; le bouton **EN** en haut à droite ajoute `?lang=en` à l'adresse, gardé de page en page
+(**FR** revient au français). Les textes des pages sont traduits dans `i18n.js` : chaque texte français y sert de clé.
+Un texte ajouté dans une page ou un script doit y recevoir sa traduction, sinon il reste en français sur le site anglais.
+Les types de publications et de conférences, les langues, les pays et les villes de la carte y sont aussi traduits ;
+les titres, revues et congrès restent tels qu'écrits dans le tableau. Les périodes du graphique ont leur nom anglais
+dans `config.js` (`nom_en`), les thèmes dans `donnees/themes.csv`.
 
 ## Lancer la collecte à la main
 

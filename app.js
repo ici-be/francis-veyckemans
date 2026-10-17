@@ -3,6 +3,7 @@
   "use strict";
 
   const { $, sansAccents, echapper, estLui, estAvis, pluriel, famille, revueHTML, liensHTML } = FV;
+  const { t, valeur } = I18N;
   const champs = { recherche: $("#recherche"), type: $("#type"), pdf: $("#pdf") };
   const corps = $("#tableau tbody");
   const AUTEURS_MAX = 8;
@@ -27,7 +28,7 @@
       afficher();
     })
     .catch((e) => {
-      $("#compte").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
+      $("#compte").textContent = t("La liste n'a pas pu être chargée ({e}).", { e: e.message });
     });
 
   function remplirTypes() {
@@ -35,7 +36,7 @@
     toutes.forEach((p) => (compte[p.type] = (compte[p.type] || 0) + 1));
     Object.keys(compte)
       .sort((a, b) => compte[b] - compte[a])
-      .forEach((t) => champs.type.add(new Option(`${t} (${compte[t]})`, t)));
+      .forEach((type) => champs.type.add(new Option(`${valeur(type)} (${compte[type]})`, type)));
   }
 
   // ---------------------------------------------------------------- filtres et adresse
@@ -64,6 +65,7 @@
     if (choix.revue) q.set("revue", choix.revue);
     if (choix.coauteur) q.set("coauteur", choix.coauteur);
     if (tri.cle !== "annee" || tri.sens !== -1) q.set("tri", (tri.sens > 0 ? "" : "-") + tri.cle);
+    if (I18N.en) q.set("lang", "en");
     const s = q.toString();
     history.replaceState(null, "", s ? "?" + s : location.pathname);
   }
@@ -94,8 +96,8 @@
     remplirTableau(liste);
     afficherChoix();
     $("#compte").textContent = liste.length === toutes.length
-      ? `${toutes.length} publications`
-      : `${liste.length} publication${liste.length > 1 ? "s" : ""} sur ${toutes.length}`;
+      ? pluriel(toutes.length, "publication")
+      : t(liste.length > 1 ? "{n} publications sur {total}" : "{n} publication sur {total}", { n: liste.length, total: toutes.length });
     $("#exporter").hidden = !liste.length;
     document.querySelectorAll("#periodes button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.periode === choix.periode)));
     document.querySelectorAll("#tableau th[data-tri]").forEach((th) => {
@@ -107,12 +109,12 @@
   // filtres posés en cliquant, chacun avec sa croix
   function afficherChoix() {
     const etiquettes = [];
-    if (choix.annee) etiquettes.push(["annee", "année " + choix.annee]);
+    if (choix.annee) etiquettes.push(["annee", t("année {a}", { a: choix.annee })]);
     if (choix.periode !== "") etiquettes.push(["periode", nomPeriode(choix.periode)]);
     if (choix.revue) etiquettes.push(["revue", choix.revue]);
-    if (choix.coauteur) etiquettes.push(["coauteur", "avec " + choix.coauteur]);
+    if (choix.coauteur) etiquettes.push(["coauteur", t("avec {nom}", { nom: choix.coauteur })]);
     $("#choix").innerHTML = etiquettes.map(([cle, texte]) =>
-      `<button type="button" class="etiquette" data-cle="${cle}" title="Retirer ce filtre">${echapper(texte)} <span aria-hidden="true">×</span></button>`).join("");
+      `<button type="button" class="etiquette" data-cle="${cle}" title="${t("Retirer ce filtre")}">${echapper(texte)} <span aria-hidden="true">×</span></button>`).join("");
   }
 
   function trier(liste) {
@@ -132,14 +134,14 @@
     if (liste.length < p._auteurs.length) {
       const cache = p._auteurs.slice(liste.length);
       const lui = cache.some(estLui) ? `, …, ${echapper(cache.find(estLui))}` : "";
-      html += `${lui} <button type="button" class="plus" data-id="${echapper(p.id)}">et ${cache.length} autres</button>`;
+      html += `${lui} <button type="button" class="plus" data-id="${echapper(p.id)}">${t("et {n} autres", { n: cache.length })}</button>`;
     }
     return html;
   }
 
   function remplirTableau(liste) {
     if (!liste.length) {
-      corps.innerHTML = `<tr><td colspan="6" class="vide">Aucune publication ne correspond à ces critères.</td></tr>`;
+      corps.innerHTML = `<tr><td colspan="6" class="vide">${t("Aucune publication ne correspond à ces critères.")}</td></tr>`;
       return;
     }
     corps.innerHTML = liste.map((p) => `
@@ -151,8 +153,8 @@
           ${p.notes && !/automatiquement/.test(p.notes) ? `<div class="note">${echapper(p.notes)}</div>` : ""}
         </td>
         <td class="revue">${revueHTML(p)}</td>
-        <td class="type"><span class="pastille ${famille(p.type)}">${echapper(p.type)}</span></td>
-        <td class="citations">${p._citations ? `<span title="Citations selon OpenAlex">${p._citations}</span>` : ""}</td>
+        <td class="type"><span class="pastille ${famille(p.type)}">${echapper(valeur(p.type))}</span></td>
+        <td class="citations">${p._citations ? `<span title="${t("Citations selon OpenAlex")}">${p._citations}</span>` : ""}</td>
         <td class="liens-cell">${liensHTML(p)}</td>
       </tr>`).join("");
   }
@@ -161,7 +163,7 @@
 
   function dessinerPeriodes() {
     $("#periodes").innerHTML = PERIODES.map((p, i) =>
-      `<button type="button" class="periode p${i}" data-periode="${i}" aria-pressed="false"><b>${nomPeriode(i)}</b> ${echapper(p.nom)}</button>`).join("");
+      `<button type="button" class="periode p${i}" data-periode="${i}" aria-pressed="false"><b>${nomPeriode(i)}</b> ${echapper((I18N.en && p.nom_en) || p.nom)}</button>`).join("");
     $("#periodes").hidden = !PERIODES.length;
   }
 
@@ -218,7 +220,7 @@
     const z = e.target.closest(".zone");
     if (!z) return (infobulle.hidden = true);
     const n = +z.dataset.n;
-    infobulle.textContent = `${z.dataset.annee} : ${n ? pluriel(n, "publication") : "aucune"}`;
+    infobulle.textContent = t("{a} : {n}", { a: z.dataset.annee, n: n ? pluriel(n, "publication") : t("aucune") });
     infobulle.hidden = false;
     infobulle.style.left = Math.min(e.clientX + 12, innerWidth - infobulle.offsetWidth - 8) + "px";
     infobulle.style.top = e.clientY - 36 + "px";
