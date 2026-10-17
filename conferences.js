@@ -94,7 +94,7 @@
       const lui = liste.slice(6).find(estLui);
       court = liste.slice(0, 6).concat(lui ? ["…", lui, "et al."] : ["et al."]);
     }
-    return `<div class="auteurs">${court.map((a) => (estLui(a) ? `<b>${echapper(a)}</b>` : echapper(a))).join(", ")}</div>`;
+    return `<div class="auteurs">${court.map(echapper).join(", ")}</div>`;
   }
 
   function liensHTML(c) {
