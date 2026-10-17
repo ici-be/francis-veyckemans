@@ -123,7 +123,7 @@ window.I18N = (function () {
     "Agrandir la carte": "Enlarge the map",
     "Réduire la carte": "Shrink the map",
     "Europe": "Europe",
-    "Belgique et environs": "Belgium and surroundings",
+    "Belgique et environs": "Belgium area",
     "Amérique du Nord": "North America",
     "Amérique du Sud": "South America",
     "Océan Indien": "Indian Ocean",
