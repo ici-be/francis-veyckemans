@@ -60,7 +60,7 @@ chaque fichier est rattaché à son article et le bouton **PDF** apparaît sur l
   Fichier non reconnu ou mal rattaché : écrire dans sa colonne `article` l'id de l'article
   (colonne `id` de l'onglet Publications), son DOI ou son PMID.
 - Retirer un fichier du dossier retire son lien du site.
-- Pour ne pas attendre : menu **Archives → Lier les PDF maintenant** dans le tableau.
+- Pour ne pas attendre : menu **Archives → Lier les PDF et les présentations maintenant** dans le tableau.
 
 Installation (une seule fois), dans l'éditeur Apps Script du tableau, après y avoir recollé
 `outils/tableau.gs` : *Services ＋ → Drive API → Ajouter*, puis exécuter la fonction `installerPdf`.
@@ -74,6 +74,12 @@ communications et posters déposés dans **DIAL**, le dépôt de l'UCLouvain (su
 Colonnes : `id` (code unique, par exemple `manuel-2019-lille`), `date` (`AAAA-MM-JJ`, ou seulement `AAAA`), `titre`,
 `congres`, `lieu`, `type` (conférence, communication, poster, atelier…), `langue`, `orateurs`, `lien_info`,
 `lien_diapos`, `lien_video`, `notes`, `masquer`, `verrouille`, `sources`, `ajoute_le`.
+
+**Diapositives** : déposer les présentations (PDF, PowerPoint ou Google Slides) dans le dossier **« presentations »**
+du Google Drive, à côté du tableau. Chaque fichier est rattaché à sa conférence d'après son nom (id, titre ou partie du
+titre, ou date `AAAA-MM-JJ`), sinon d'après le titre lu dans le PDF ; il est noté dans l'onglet **« Présentations »**
+(colonne `conférence` à corriger avec l'id si besoin) et le bouton **Diapos** apparaît sur la page. Installation : dans
+Apps Script, exécuter `installerPresentations`.
 
 Installation (une seule fois) : recoller `outils/tableau.gs` dans Apps Script, exécuter `installerConferences`,
 faire *Déployer → Gérer les déploiements → ✎ → Nouvelle version*, puis mettre le numéro (gid) affiché dans le

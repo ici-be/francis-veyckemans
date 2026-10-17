@@ -4,7 +4,7 @@ window.CONFIG = {
   // (vide : le site lit donnees/publications.csv)
   tableau: "17bUrP_chpuZXRbxyL96DIlUFHj47GjZQdmftGOaZ0JU",
   // numéro (gid) de l'onglet « Conférences » du même tableau (vide : le site lit donnees/conferences.csv)
-  conferences: "",
+  conferences: "1224804362",
   // périodes affichées au-dessus du graphique (« a » vide : jusqu'à aujourd'hui)
   periodes: [
     { de: 1985, a: 1995, nom: "Transplantation hépatique" },

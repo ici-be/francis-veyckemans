@@ -36,7 +36,12 @@
  *  « PDF », et son lien est écrit dans la colonne pdf_drive : le site affiche alors le bouton PDF.
  *  Fichier non reconnu : écrire dans l'onglet « PDF », colonne « article », l'id de l'article
  *  (ou son DOI, ou son PMID). Rattachement erroné : corriger cette case de la même façon.
- *  Menu Archives → Lier les PDF maintenant, pour ne pas attendre l'heure suivante.
+ *  Menu Archives → Lier les PDF et les présentations maintenant, pour ne pas attendre l'heure suivante.
+ *
+ * Présentations (diapositives) des conférences : même principe avec le dossier « presentations »
+ * (fonction installerPresentations) ; PDF, PowerPoint ou Google Slides. Chaque fichier est rattaché
+ * à une conférence par l'id, le titre ou la date (AAAA-MM-JJ) dans son nom, sinon par le titre lu
+ * dans le PDF ; il est noté dans l'onglet « Présentations », et son lien écrit dans lien_diapos.
  */
 
 const ONGLET = 'Publications';
@@ -175,69 +180,104 @@ const ENTETE_PDF = ['fichier', 'article', 'rattaché par', 'lien', 'id_fichier']
 const PDF_PAR_PASSAGE = 15;  // lire le texte d'un PDF prend quelques secondes : le reste attend le passage suivant
 
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('Archives').addItem('Lier les PDF maintenant', 'lierPdfs').addToUi();
+  SpreadsheetApp.getUi().createMenu('Archives')
+    .addItem('Lier les PDF et les présentations maintenant', 'lierTout')
+    .addToUi();
 }
 
-function installerPdf() {
+/** Ce que surveille chaque dossier : où écrire le lien, comment reconnaître le fichier. */
+const DOSSIERS = {
+  pdf: {
+    nom: 'pdf', propriete: 'DOSSIER_PDF', onglet: ONGLET, colonne: 'pdf_drive', suivi: ONGLET_PDF,
+    entete: ENTETE_PDF, types: [MimeType.PDF],
+    nonReconnu: 'non reconnu : indiquer l\'id, le DOI ou le PMID', introuvable: 'article introuvable : vérifier l\'id',
+    indexer: (lignes, col) => indexArticles(lignes, col),
+    resoudre: (valeur, index) => resoudre(valeur, index),
+    reconnaitre: (f, index) => reconnaitre(f, index),
+  },
+  presentations: {
+    nom: 'presentations', propriete: 'DOSSIER_PRESENTATIONS', onglet: ONGLET_CONFERENCES, colonne: 'lien_diapos',
+    suivi: 'Présentations', entete: ['fichier', 'conférence', 'rattaché par', 'lien', 'id_fichier'],
+    types: [MimeType.PDF, MimeType.MICROSOFT_POWERPOINT, MimeType.MICROSOFT_POWERPOINT_LEGACY, MimeType.GOOGLE_SLIDES],
+    nonReconnu: 'non reconnu : indiquer l\'id de la conférence', introuvable: 'conférence introuvable : vérifier l\'id',
+    indexer: (lignes, col) => indexConferences(lignes, col),
+    resoudre: (valeur, index) => (index.ids[valeur] ? valeur : ''),
+    reconnaitre: (f, index) => reconnaitreConference(f, index),
+  },
+};
+
+function installerPdf() { installerDossier(DOSSIERS.pdf); }
+function installerPresentations() { installerDossier(DOSSIERS.presentations); }
+
+/** Crée le dossier à côté du tableau (ou reprend celui qui existe), le partage, programme le passage horaire. */
+function installerDossier(cfg) {
   const tableau = DriveApp.getFileById(SpreadsheetApp.getActive().getId());
   const parents = tableau.getParents();
   const parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
-  const existants = parent.getFoldersByName('pdf');
-  const dossier = existants.hasNext() ? existants.next() : parent.createFolder('pdf');
+  const existants = parent.getFoldersByName(cfg.nom);
+  const dossier = existants.hasNext() ? existants.next() : parent.createFolder(cfg.nom);
   try {
     dossier.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   } catch (err) {
     Logger.log('Partage du dossier à faire à la main (« Tous les utilisateurs disposant du lien ») : ' + err);
   }
-  PropertiesService.getScriptProperties().setProperty('DOSSIER_PDF', dossier.getId());
+  PropertiesService.getScriptProperties().setProperty(cfg.propriete, dossier.getId());
+  // un seul passage horaire pour tous les dossiers (l'ancien s'appelait lierPdfs)
   ScriptApp.getProjectTriggers()
-    .filter((t) => t.getHandlerFunction() === 'lierPdfs')
+    .filter((t) => ['lierPdfs', 'lierTout'].includes(t.getHandlerFunction()))
     .forEach((t) => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('lierPdfs').timeBased().everyHours(1).create();
-  Logger.log('Dossier des PDF : ' + dossier.getUrl());
+  ScriptApp.newTrigger('lierTout').timeBased().everyHours(1).create();
+  Logger.log('Dossier « ' + cfg.nom + ' » : ' + dossier.getUrl());
   Logger.log(typeof Drive === 'undefined'
-    ? 'Service « Drive API » absent : seuls les noms de fichiers serviront à reconnaître les articles.'
+    ? 'Service « Drive API » absent : seuls les noms de fichiers serviront à les reconnaître.'
     : 'Service « Drive API » présent : le texte des PDF sera lu.');
-  lierPdfs();
+  lierTout();
 }
 
-function lierPdfs() {
-  const idDossier = PropertiesService.getScriptProperties().getProperty('DOSSIER_PDF');
-  if (!idDossier) throw new Error('Lancer d\'abord installerPdf.');
+function lierTout() {
+  const proprietes = PropertiesService.getScriptProperties();
+  Object.values(DOSSIERS).forEach((cfg) => { if (proprietes.getProperty(cfg.propriete)) lierDossier(cfg); });
+}
+
+function lierPdfs() { lierTout(); }  // ancien nom, gardé pour le déclencheur déjà installé
+
+function lierDossier(cfg) {
+  const idDossier = PropertiesService.getScriptProperties().getProperty(cfg.propriete);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
     const classeur = SpreadsheetApp.getActive();
-    const pub = classeur.getSheetByName(ONGLET);
+    const pub = classeur.getSheetByName(cfg.onglet);
     protegerEntete(pub);
     let entete = pub.getRange(1, 1, 1, pub.getLastColumn()).getValues()[0].map(String);
-    if (!entete.includes('pdf_drive')) {
-      pub.getRange(1, entete.length + 1).setValue('pdf_drive').setFontWeight('bold').setBackground('#e3f0ef');
-      entete.push('pdf_drive');
+    if (!entete.includes(cfg.colonne)) {
+      pub.getRange(1, entete.length + 1).setValue(cfg.colonne).setFontWeight('bold').setBackground('#e3f0ef');
+      entete.push(cfg.colonne);
     }
     const lignes = pub.getRange(2, 1, Math.max(1, pub.getLastRow() - 1), entete.length).getValues();
     const col = (nom) => entete.indexOf(nom);
-    const index = indexArticles(lignes, col);
+    const index = cfg.indexer(lignes, col);
 
-    let feuille = classeur.getSheetByName(ONGLET_PDF);
+    let feuille = classeur.getSheetByName(cfg.suivi);
     if (!feuille) {
-      feuille = classeur.insertSheet(ONGLET_PDF);
-      feuille.getRange(1, 1, 1, ENTETE_PDF.length).setValues([ENTETE_PDF]).setFontWeight('bold').setBackground('#e3f0ef');
+      feuille = classeur.insertSheet(cfg.suivi);
+      feuille.getRange(1, 1, 1, cfg.entete.length).setValues([cfg.entete]).setFontWeight('bold').setBackground('#e3f0ef');
       feuille.setFrozenRows(1);
       feuille.setColumnWidth(1, 360);
       feuille.setColumnWidth(2, 260);
       feuille.setColumnWidth(3, 220);
     }
-    const suivis = feuille.getLastRow() > 1 ? feuille.getRange(2, 1, feuille.getLastRow() - 1, ENTETE_PDF.length).getValues() : [];
+    const suivis = feuille.getLastRow() > 1 ? feuille.getRange(2, 1, feuille.getLastRow() - 1, cfg.entete.length).getValues() : [];
     const parFichier = {};
     suivis.forEach((s) => { parFichier[s[4]] = s; });
 
     // nouveaux fichiers du dossier
     const presents = {};
     let lus = 0;
-    const fichiers = DriveApp.getFolderById(idDossier).getFilesByType(MimeType.PDF);
+    const fichiers = DriveApp.getFolderById(idDossier).getFiles();
     while (fichiers.hasNext()) {
       const f = fichiers.next();
+      if (!cfg.types.includes(f.getMimeType())) continue;
       presents[f.getId()] = true;
       const deja = parFichier[f.getId()];
       if (deja) {
@@ -247,35 +287,35 @@ function lierPdfs() {
       if (lus >= PDF_PAR_PASSAGE) continue;
       lus++;
       try { f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (err) { /* partage hérité du dossier */ }
-      const r = reconnaitre(f, index);
-      const ligne = [f.getName(), r.id || '', r.id ? r.par : 'non reconnu : indiquer l\'id, le DOI ou le PMID', 
-        'https://drive.google.com/file/d/' + f.getId() + '/view', f.getId()];
+      const r = cfg.reconnaitre(f, index);
+      const lien = f.getMimeType() === MimeType.GOOGLE_SLIDES ? f.getUrl() : 'https://drive.google.com/file/d/' + f.getId() + '/view';
+      const ligne = [f.getName(), r.id || '', r.id ? r.par : cfg.nonReconnu, lien, f.getId()];
       suivis.push(ligne);
       parFichier[f.getId()] = ligne;
     }
     suivis.forEach((s) => { if (!presents[s[4]]) s[2] = 'retiré du dossier'; });
 
-    // lien voulu pour chaque article (l'id peut avoir été corrigé à la main, ou être un DOI / PMID)
+    // lien voulu pour chaque ligne (l'id peut avoir été corrigé à la main)
     const voulu = {};
     const nosLiens = {};
     suivis.forEach((s) => {
       nosLiens[s[3]] = true;
-      const id = resoudre(String(s[1]).trim(), index);
-      if (s[1] && !id) s[2] = 'article introuvable : vérifier l\'id';
-      else if (id && /^(non reconnu|article introuvable)/.test(s[2])) s[2] = 'à la main';
+      const id = cfg.resoudre(String(s[1]).trim(), index);
+      if (s[1] && !id) s[2] = cfg.introuvable;
+      else if (id && /^(non reconnu|article introuvable|conférence introuvable)/.test(s[2])) s[2] = 'à la main';
       if (id && presents[s[4]] && !voulu[id]) voulu[id] = s[3];
     });
 
-    // colonne pdf_drive : on ne touche qu'aux liens vides ou venant de ce dossier
-    const cPdf = col('pdf_drive'), cId = col('id');
+    // colonne du lien : on ne touche qu'aux liens vides ou venant de ce dossier
+    const cLien = col(cfg.colonne), cId = col('id');
     const colonne = lignes.map((l) => {
-      const actuel = String(l[cPdf] || '');
+      const actuel = String(l[cLien] || '');
       const cible = voulu[l[cId]];
       if (cible) return [actuel && !nosLiens[actuel] ? actuel : cible];
       return [nosLiens[actuel] ? '' : actuel];
     });
-    pub.getRange(2, cPdf + 1, colonne.length, 1).setValues(colonne);
-    if (suivis.length) feuille.getRange(2, 1, suivis.length, ENTETE_PDF.length).setValues(suivis);
+    pub.getRange(2, cLien + 1, colonne.length, 1).setValues(colonne);
+    if (suivis.length) feuille.getRange(2, 1, suivis.length, cfg.entete.length).setValues(suivis);
   } finally {
     lock.releaseLock();
   }
@@ -334,6 +374,64 @@ function reconnaitre(fichier, index) {
   const t = cleT && index.titres.find(([titre]) => cleT.includes(titre));
   if (t) return { id: t[1], par: 'titre (texte du PDF)' };
   return {};
+}
+
+function indexConferences(lignes, col) {
+  const index = { ids: {}, titres: [], dates: {} };
+  lignes.forEach((l) => {
+    const id = String(l[col('id')] || '');
+    if (!id) return;
+    index.ids[id] = true;
+    const titre = cleTexte(l[col('titre')]);
+    if (titre.length >= 15) index.titres.push([titre, id]);
+    const date = String(l[col('date')] || '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) (index.dates[date] = index.dates[date] || []).push(id);
+  });
+  index.titres.sort((a, b) => b[0].length - a[0].length);
+  return index;
+}
+
+/** Rattache une présentation à une conférence : id, titre ou date (AAAA-MM-JJ) dans le nom, puis titre dans le PDF. */
+function reconnaitreConference(fichier, index) {
+  const nom = fichier.getName().replace(/\.(pdf|pptx?|key)$/i, '');
+  for (const id in index.ids) {
+    if (nom.includes(id) || nom.includes(id.replace(/\//g, '_'))) return { id: id, par: 'id (nom du fichier)' };
+  }
+  const cleNom = cleTexte(nom);
+  if (cleNom.length >= 12) {
+    const t = index.titres.find(([titre]) => titre.startsWith(cleNom) || cleNom.includes(titre));
+    if (t) return { id: t[1], par: 'titre (nom du fichier)' };
+  }
+  // une partie du titre dans le nom (« SARNePI 2015 - APRICOT state of the study ») : le plus long morceau commun
+  const scores = index.titres.map(([titre, id]) => [communLePlusLong(cleNom, titre), id]).sort((a, b) => b[0] - a[0]);
+  if (scores.length && scores[0][0] >= 15 && (scores.length === 1 || scores[0][0] - scores[1][0] >= 5)) {
+    return { id: scores[0][1], par: 'partie du titre (nom du fichier)' };
+  }
+  const date = (nom.match(/\d{4}-\d{2}-\d{2}/) || [])[0];
+  if (date && (index.dates[date] || []).length === 1) return { id: index.dates[date][0], par: 'date (nom du fichier)' };
+  if (fichier.getMimeType() === MimeType.PDF) {
+    const cleT = cleTexte(texteDuPdf(fichier).slice(0, 3000));  // la page de titre
+    const t = cleT && index.titres.find(([titre]) => cleT.includes(titre));
+    if (t) return { id: t[1], par: 'titre (texte du PDF)' };
+  }
+  return {};
+}
+
+/** Longueur du plus long morceau commun à deux textes. */
+function communLePlusLong(a, b) {
+  let meilleur = 0;
+  let precedent = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const ligne = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        ligne[j] = precedent[j - 1] + 1;
+        if (ligne[j] > meilleur) meilleur = ligne[j];
+      }
+    }
+    precedent = ligne;
+  }
+  return meilleur;
 }
 
 /** Texte du PDF, par conversion temporaire en document Google (service avancé « Drive API »). */
