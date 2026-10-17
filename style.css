@@ -74,14 +74,16 @@ a:hover { color: var(--chaud); }
   font: 600 clamp(20px, 4vw, 24px)/1.2 "Source Serif 4", Georgia, serif;
 }
 .nom span { color: var(--encre-3); font-size: 14px; }
-/* bouton de langue, en haut à droite */
+/* choix de la langue, en haut à droite : FR | EN */
 .nom .langue {
-  margin-left: auto; align-self: center;
-  font: 600 12px/1 "Source Sans 3", system-ui, sans-serif; letter-spacing: .04em;
-  color: var(--encre-3); text-decoration: none; white-space: nowrap;
-  border: 1px solid var(--trait); border-radius: 5px; padding: 4px 7px;
+  margin-left: auto; align-self: center; display: inline-flex;
+  font: 600 12px/1 "Source Sans 3", system-ui, sans-serif; letter-spacing: .04em; white-space: nowrap;
+  border: 1px solid var(--trait); border-radius: 5px; overflow: hidden;
 }
-.nom .langue:hover { color: var(--accent); border-color: var(--accent); }
+.nom .langue > * { padding: 4px 7px; color: var(--encre-3); text-decoration: none; font: inherit; }
+.nom .langue > * + * { border-left: 1px solid var(--trait); }
+.nom .langue [aria-current] { background: var(--accent-clair); color: var(--accent); }
+.nom .langue a:hover { color: var(--accent); }
 /* page anglaise : cachée le temps de la traduire (i18n.js) */
 html.traduction body { visibility: hidden; }
 h1 {

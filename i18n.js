@@ -276,19 +276,30 @@ window.I18N = (function () {
       }));
       internes(document).forEach((a) => a.setAttribute("href", lien(a.getAttribute("href"))));
     }
-    // bouton de langue, en haut à droite
+    // choix de la langue, en haut à droite : FR | EN, la langue active mise en évidence
     const nom = document.querySelector(".entete .nom");
     if (nom) {
-      const b = document.createElement("a");
-      b.className = "langue";
-      b.href = autreLangue();
-      b.hreflang = b.lang = en ? "fr" : "en";
-      b.textContent = en ? "FR" : "EN";
-      b.title = en ? "Version française" : "English version";
-      b.setAttribute("aria-label", b.title);
-      // l'adresse a pu changer depuis (filtres) : recalculée au moment du clic
-      b.addEventListener("click", (e) => { e.preventDefault(); location.href = autreLangue(); });
-      nom.appendChild(b);
+      const choix = document.createElement("span");
+      choix.className = "langue";
+      choix.setAttribute("role", "group");
+      choix.setAttribute("aria-label", en ? "Language" : "Langue");
+      [["fr", "FR", "Version française"], ["en", "EN", "English version"]].forEach(([code, sigle, titre]) => {
+        const actif = code === langue;
+        const b = document.createElement(actif ? "span" : "a");
+        b.textContent = sigle;
+        b.lang = code;
+        b.title = titre;
+        b.setAttribute("aria-label", titre);
+        if (actif) b.setAttribute("aria-current", "true");
+        else {
+          b.href = autreLangue();
+          b.hreflang = code;
+          // l'adresse a pu changer depuis (filtres) : recalculée au moment du clic
+          b.addEventListener("click", (e) => { e.preventDefault(); location.href = autreLangue(); });
+        }
+        choix.appendChild(b);
+      });
+      nom.appendChild(choix);
     }
     document.documentElement.classList.remove("traduction");
   }
