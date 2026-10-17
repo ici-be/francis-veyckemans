@@ -24,9 +24,9 @@
     });
 
   function ficheHTML(p) {
-    return `<li class="fiche cite-ici">
+    return `<li class="fiche">
       <span class="fiche-annee">${echapper(p.annee) || "—"}</span>
-      <div>
+      <div class="cite-ici">
         <div class="titre">${echapper(p.titre)}</div>
         <div class="auteurs">${echapper(p._auteurs.slice(0, 6).join(", "))}${p._auteurs.length > 6 ? ", et al." : ""}</div>
         <div class="revue">${revueHTML(p)}${p._citations ? ` · ${pluriel(p._citations, "citation")}` : ""}</div>

@@ -171,7 +171,8 @@ window.FV = (function () {
       const b = e.target.closest(".citer, .format, .copier");
       if (!b) return;
       if (b.classList.contains("citer")) {
-        const lieu = b.closest(".cite-ici");
+        // le panneau va dans l'élément .cite-ici de la publication (ancêtre du bouton, ou autre cellule de la même ligne)
+        const lieu = b.closest(".cite-ici") || b.closest("tr, li").querySelector(".cite-ici");
         const ouvert = lieu.querySelector(".citation");
         if (ouvert) ouvert.remove();
         b.setAttribute("aria-expanded", String(!ouvert));
