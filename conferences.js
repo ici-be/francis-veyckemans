@@ -50,6 +50,7 @@
       const annees = toutes.map((c) => parseInt(c.date, 10)).filter(Boolean);
       if (annees.length)
         $("#intro").textContent = `${pluriel(toutes.length, "intervention")}, de ${Math.min(...annees)} à ${Math.max(...annees)}. La liste est encore incomplète.`;
+      $("#recherche").value = new URLSearchParams(location.search).get("q") || "";  // lien « conferences.html?q=… »
       afficher();
       dessinerCarte();
     })

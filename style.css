@@ -311,6 +311,21 @@ td.revue i { color: var(--encre); font-style: italic; }
 .pied { margin-top: 40px; padding: 22px 0 40px; border-top: 1px solid var(--trait); color: var(--encre-3); font-size: 14px; }
 
 /* téléphone : chaque publication devient une fiche */
+/* page Maladies rares */
+.mr-acces { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 8px 0 28px; max-width: 900px; }
+.mr-carte {
+  display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; margin: 0;
+  text-decoration: none; color: var(--encre); border-top: 4px solid var(--accent);
+}
+.mr-carte:hover { border-color: var(--chaud); color: var(--encre); }
+.mr-carte:hover .mr-lien { color: var(--chaud); }
+.mr-langue { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--chaud); }
+.mr-titre { font: 600 19px/1.35 "Source Serif 4", Georgia, serif; }
+.mr-lien { margin-top: auto; padding-top: 6px; font-size: 14px; font-weight: 600; color: var(--accent); }
+.mr-notes { max-width: 720px; color: var(--encre-2); }
+.mr-notes h2 { color: var(--encre); margin-bottom: 8px; }
+.mr-notes ul { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
 /* cartes des lieux (carte.js) */
 .carte-section { padding: 18px; }
 .carte-bloc { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
