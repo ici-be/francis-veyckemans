@@ -20,6 +20,8 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
 - donnees/coauteurs.csv : forme complète « Nom Prénom » des variantes de noms d'auteurs
   (« Pirotte T », « Thierry Pirotte » → « Pirotte Thierry »). Les lignes existantes, éventuellement
   corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées ;
+- donnees/conferences.csv : copie de l'onglet « Conférences » du tableau (exposés trouvés dans DIAL,
+  le dépôt de l'UCLouvain, plus ce qui est ajouté à la main), mêmes règles que les publications ;
 - donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
   revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
   éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
@@ -36,6 +38,7 @@ Sur GitHub, l'URL et la clé viennent des secrets ARCHIVES_URL et ARCHIVES_CLE.
 import collections
 import csv
 import datetime
+import io
 import json
 import os
 import re
@@ -52,6 +55,7 @@ FICHIER = RACINE / "donnees" / "publications.csv"
 CITATIONS = RACINE / "donnees" / "citations.csv"
 COAUTEURS = RACINE / "donnees" / "coauteurs.csv"
 LECTURES = RACINE / "donnees" / "lectures.csv"
+CONFERENCES = RACINE / "donnees" / "conferences.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -607,9 +611,128 @@ def details_openalex(dois):
     return details
 
 
+# ---------------------------------------------------------------- conférences (DIAL, UCLouvain)
+
+COLONNES_CONFERENCES = ["id", "date", "titre", "congres", "lieu", "type", "langue", "orateurs", "lien_info",
+                        "lien_diapos", "lien_video", "notes", "masquer", "verrouille", "sources", "ajoute_le"]
+COLONNES_CONFERENCES_AUTO = ["date", "titre", "congres", "lieu", "type", "langue", "orateurs", "lien_info"]
+MOIS_EN = {m: i + 1 for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split())}
+
+
+def dial_conferences():
+    """Exposés, communications et posters déposés dans DIAL, le dépôt institutionnel de l'UCLouvain."""
+    resultats, page = [], 0
+    while True:
+        d = get("https://research.dial.uclouvain.be/server/api/discover/search/objects", params={
+            "query": "Veyckemans", "dsoType": "ITEM", "size": 100, "page": page,
+        }).json()["_embedded"]["searchResult"]
+        for o in d["_embedded"]["objects"]:
+            r = lire_dial(o["_embedded"]["indexableObject"]["metadata"])
+            if r:
+                resultats.append(r)
+        page += 1
+        if page >= d["page"]["totalPages"]:
+            break
+    # même exposé déposé deux fois le même jour (fautes de frappe corrigées) : un seul ;
+    # le même titre présenté à deux congrès reste en double
+    uniques = {}
+    for r in resultats:
+        uniques.setdefault((cle_titre(r["titre"])[:40], r["date"]), r)
+    print(f"DIAL : {len(uniques)} conférences", file=sys.stderr)
+    return list(uniques.values())
+
+
+def lire_dial(meta):
+    v = lambda cle: [x["value"] for x in meta.get(cle, [])]
+    if v("dc.type.maintype") != ["text::conference-speech"]:
+        return None
+    auteurs = v("dc.contributor.author")
+    if not any("veyckemans" in a.lower() for a in auteurs):
+        return None
+    orateurs = []
+    for a in auteurs:  # « Veyckemans, Francis » → « Veyckemans F »
+        nom, _, prenom = a.partition(",")
+        initiales = "".join(p[0] for p in re.split(r"[\s-]+", prenom.strip()) if p)
+        orateurs.append(f"{nom.strip()} {initiales}".strip())
+    date = (v("publication.conference.startDate") or v("dc.date.issued") or [""])[0]
+    m = re.match(r"([A-Za-z]{3})\w* (\d{1,2}), (\d{4})", date)  # « Oct 04, 2002 »
+    if m and m.group(1).lower() in MOIS_EN:
+        date = f"{m.group(3)}-{MOIS_EN[m.group(1).lower()]:02d}-{int(m.group(2)):02d}"
+    lieu = (v("publication.conference.location") or [""])[0].strip()
+    m = re.match(r"^\((.+?)\)\s*(.+)$", lieu)  # « (France) Brest » → « Brest (France) »
+    if m:
+        lieu = f"{m.group(2)} ({m.group(1)})"
+    handle = (v("dc.identifier.handle") or [""])[0]
+    if "conference-poster" in v("dc.type.subtype"):
+        type_ = "poster"
+    elif len(auteurs) == 1:
+        type_ = "conférence"
+    else:
+        type_ = "communication"
+    return {
+        "id": "dial:" + handle if handle else "",
+        "date": date[:10],
+        "titre": nettoyer(v("dc.title")[0]).strip("[]") if v("dc.title") else "",
+        "congres": nettoyer((v("publication.conference.name") or [""])[0]),
+        "lieu": lieu,
+        "type": type_,
+        "langue": LANGUES.get((v("dc.language.iso") or [""])[0], ""),
+        "orateurs": ", ".join(orateurs),
+        "lien_info": (v("dc.identifier.uri") or [f"https://hdl.handle.net/{handle}" if handle else ""])[0],
+        "_source": "DIAL",
+    }
+
+
+def conferences(sheet_id, gid, url, cle, simulation):
+    """Complète l'onglet « Conférences » (ou donnees/conferences.csv), avec les mêmes règles que les publications."""
+    if sheet_id and gid:
+        existantes = lire_tableau(sheet_id, gid, ("id", "date", "titre"))
+    elif CONFERENCES.exists():
+        with CONFERENCES.open(newline="", encoding="utf-8") as f:
+            existantes = list(csv.DictReader(f))
+    else:
+        existantes = []
+    par_id = {f["id"]: f for f in existantes if f.get("id")}
+    par_titre = {(cle_titre(f.get("titre"))[:40], f.get("date") or ""): f for f in existantes}
+    nouvelles, a_completer = [], []
+    for r in dial_conferences():
+        fiche = par_id.get(r["id"]) or par_titre.get((cle_titre(r["titre"])[:40], r["date"]))
+        if fiche is None:
+            fiche = {c: "" for c in COLONNES_CONFERENCES}
+            fiche.update({c: r.get(c, "") for c in COLONNES_CONFERENCES_AUTO}, id=r["id"], sources=r["_source"],
+                         ajoute_le=datetime.date.today().isoformat())
+            nouvelles.append(fiche)
+            par_id[fiche["id"]] = fiche
+            continue
+        if oui(fiche.get("verrouille")):
+            continue
+        remplir = {c: r[c] for c in COLONNES_CONFERENCES_AUTO if not (fiche.get(c) or "").strip() and r.get(c)}
+        if remplir:
+            fiche.update(remplir)
+            a_completer.append({"id": fiche["id"], "remplir": remplir})
+    print(f"Conférences : {len(nouvelles)} nouvelle(s), {len(a_completer)} complétée(s).", file=sys.stderr)
+    if simulation:
+        for f in nouvelles:
+            print(f"  nouvelle : {f['date']} {f['titre'][:80]}", file=sys.stderr)
+        return
+    if sheet_id and gid:
+        if nouvelles or a_completer:
+            rep = envoyer(url, cle, nouvelles, a_completer, onglet="Conférences")
+            print(f"Onglet Conférences : {len(rep['ajoutees'])} ajoutée(s), {len(rep['completees'])} complétée(s)", file=sys.stderr)
+        ecrire_csv(lire_tableau(sheet_id, gid, ("id", "date", "titre")), CONFERENCES, COLONNES_CONFERENCES)
+    else:
+        toutes = sorted(existantes + nouvelles, key=lambda f: (f.get("date") or ""), reverse=True)
+        ecrire_csv(toutes, CONFERENCES, COLONNES_CONFERENCES)
+
+
 # ---------------------------------------------------------------- tableau Google Sheets
 
 CONFIG_LOCALE = Path.home() / ".config" / "archives-fv" / "config.json"
+
+
+def id_onglet_conferences():
+    m = re.search(r'conferences:\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
+    return m.group(1) if m else ""
 
 
 def id_tableau():
@@ -618,11 +741,11 @@ def id_tableau():
     return m.group(1) if m else ""
 
 
-def lire_tableau(sheet_id):
-    r = get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export", params={"format": "csv", "gid": 0})
+def lire_tableau(sheet_id, gid=0, obligatoires=("id", "titre", "doi", "pmid")):
+    r = get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export", params={"format": "csv", "gid": gid})
     r.encoding = "utf-8"
-    lecteur = csv.DictReader(r.text.splitlines())
-    manquantes = [c for c in ("id", "titre", "doi", "pmid") if c not in (lecteur.fieldnames or [])]
+    lecteur = csv.DictReader(io.StringIO(r.text))  # pas splitlines : une case peut contenir un retour à la ligne
+    manquantes = [c for c in obligatoires if c not in (lecteur.fieldnames or [])]
     if manquantes:
         sys.exit(f"La ligne d'en-tête du tableau est abîmée (colonnes absentes : {', '.join(manquantes)}). "
                  f"En-tête lu : {lecteur.fieldnames}")
@@ -640,8 +763,11 @@ def acces_script():
     return url, cle
 
 
-def envoyer(url, cle, ajouter, completer_, essai=False):
-    r = session.post(url, data=json.dumps({"cle": cle, "ajouter": ajouter, "completer": completer_, "essai": essai}),
+def envoyer(url, cle, ajouter, completer_, essai=False, onglet=None):
+    demande = {"cle": cle, "ajouter": ajouter, "completer": completer_, "essai": essai}
+    if onglet:
+        demande["onglet"] = onglet
+    r = session.post(url, data=json.dumps(demande),
                      headers={"Content-Type": "text/plain"}, timeout=300)  # text/plain : pas de pré-vol CORS
     r.raise_for_status()
     rep = r.json()
@@ -650,13 +776,13 @@ def envoyer(url, cle, ajouter, completer_, essai=False):
     return rep
 
 
-def ecrire_csv(lignes):
-    FICHIER.parent.mkdir(exist_ok=True)
-    with FICHIER.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLONNES, extrasaction="ignore")
+def ecrire_csv(lignes, fichier=FICHIER, colonnes=COLONNES):
+    fichier.parent.mkdir(exist_ok=True)
+    with fichier.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=colonnes, extrasaction="ignore")
         w.writeheader()
         w.writerows(lignes)
-    print(f"Écrit : {FICHIER.relative_to(RACINE)} ({len(lignes)} lignes)", file=sys.stderr)
+    print(f"Écrit : {fichier.relative_to(RACINE)} ({len(lignes)} lignes)", file=sys.stderr)
 
 
 # ---------------------------------------------------------------- programme
@@ -681,6 +807,7 @@ def main():
 
     simulation = "--simulation" in args
     annexes = args[:1] == ["annexes"]
+    url = cle = None
     if sheet_id:
         url, cle = (None, None) if simulation or annexes else acces_script()
         existantes = lire_tableau(sheet_id)
@@ -738,6 +865,7 @@ def main():
     if simulation:
         for f in nouvelles:
             print(f"  nouvelle : {f['annee']} {f['titre'][:90]}", file=sys.stderr)
+        conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
         return
 
     ecrire_citations(paires)
@@ -758,11 +886,13 @@ def main():
             for i in rep["ignorees"]:
                 print(f"  ignorée : {i}", file=sys.stderr)
         ecrire_csv(lire_tableau(sheet_id))  # copie de secours dans le dépôt
+        conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
         return
 
     toutes = existantes + nouvelles
     toutes.sort(key=lambda f: (-(int(f["annee"]) if f.get("annee", "").isdigit() else 0), f.get("titre", "")))
     ecrire_csv(toutes)
+    conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
 
 
 if __name__ == "__main__":

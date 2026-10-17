@@ -199,6 +199,8 @@ h2 {
 .col-annee { width: 76px; }
 .col-revue { width: 22%; }
 .col-type { width: 1%; }  /* aussi étroite que la plus longue pastille */
+.col-date { width: 1%; white-space: nowrap; }
+.col-congres { width: 28%; }
 .col-liens { width: 150px; }
 .col-citations { width: 92px; }
 td.citations { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); font-size: 14px; }

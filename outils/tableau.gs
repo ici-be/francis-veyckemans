@@ -22,6 +22,8 @@
  *    la colonne « sources » (où l'article a été trouvé) est la seule mise à jour d'office ;
  *  - avec « essai », rien n'est écrit : la réponse dit ce qui serait fait.
  * Puis l'onglet est trié par année (la plus récente en haut), puis par titre.
+ * Un envoi avec « onglet: 'Conférences' » fait la même chose dans l'onglet des conférences
+ * (trié par date). Cet onglet se crée une fois avec la fonction installerConferences.
  *
  * PDF déposés dans Google Drive (voir plus bas, lierPdfs) :
  *  1. Dans l'éditeur Apps Script : Services ＋ → « Drive API » → Ajouter
@@ -40,7 +42,10 @@
 const ONGLET = 'Publications';
 const LISTE_DU_SITE = 'https://raw.githubusercontent.com/ici-be/francis-veyckemans/main/donnees/publications.csv';
 const CASES = ['masquer', 'verrouille'];          // colonnes en cases à cocher
-const LARGEURS = { titre: 420, auteurs: 260, revue: 180, notes: 220, lien_info: 160, lien_pdf: 160 };
+const LARGEURS = { titre: 420, auteurs: 260, revue: 180, notes: 220, lien_info: 160, lien_pdf: 160, congres: 260, lieu: 180, orateurs: 220 };
+const ONGLET_CONFERENCES = 'Conférences';
+const COLONNES_CONFERENCES = ['id', 'date', 'titre', 'congres', 'lieu', 'type', 'langue', 'orateurs', 'lien_info',
+  'lien_diapos', 'lien_video', 'notes', 'masquer', 'verrouille', 'sources', 'ajoute_le'];
 
 function installer() {
   const classeur = SpreadsheetApp.getActive();
@@ -112,7 +117,8 @@ function doPost(e) {
 }
 
 function traiter(demande) {
-  const feuille = SpreadsheetApp.getActive().getSheetByName(ONGLET);
+  const feuille = SpreadsheetApp.getActive().getSheetByName(demande.onglet || ONGLET);
+  if (!feuille) throw new Error('Onglet introuvable : ' + demande.onglet);
   const valeurs = feuille.getDataRange().getValues();
   const entete = valeurs[0].map(String);
   const col = (nom) => entete.indexOf(nom);
@@ -146,10 +152,10 @@ function traiter(demande) {
 
   if (demande.essai || (!rapport.completees.length && !nouvelles.length)) return rapport;
 
-  // tri : année décroissante, puis titre
-  const ia = col('annee'), it = col('titre');
+  // tri : date (conférences) ou année (publications), la plus récente en haut, puis titre
+  const ia = col('date') >= 0 ? col('date') : col('annee'), it = col('titre');
   const corps = valeurs.slice(1).sort((a, b) =>
-    (parseInt(b[ia], 10) || 0) - (parseInt(a[ia], 10) || 0) || String(a[it]).localeCompare(String(b[it]), 'fr'));
+    String(b[ia]).localeCompare(String(a[ia])) || String(a[it]).localeCompare(String(b[it]), 'fr'));
   // les cases à cocher sont réécrites en booléens, le reste en texte
   const toutes = [entete].concat(corps);
   feuille.getRange(1, 1, toutes.length, entete.length).setNumberFormat('@').setValues(toutes);
@@ -350,4 +356,21 @@ function protegerEntete(feuille) {
   const deja = feuille.getProtections(SpreadsheetApp.ProtectionType.RANGE).some((p) => p.getRange().getRow() === 1);
   if (!deja) feuille.getRange('1:1').protect().setDescription('En-tête : ne pas modifier').setWarningOnly(true);
   if (String(feuille.getRange(1, 1).getValue()) !== 'id') Logger.log('Attention : la cellule A1 doit contenir « id ».');
+}
+
+// ---------------------------------------------------------------- onglet des conférences
+
+/** Crée l'onglet « Conférences » (vide : la collecte le remplit) et affiche son numéro (gid) pour config.js. */
+function installerConferences() {
+  const classeur = SpreadsheetApp.getActive();
+  let feuille = classeur.getSheetByName(ONGLET_CONFERENCES);
+  if (!feuille) {
+    feuille = classeur.insertSheet(ONGLET_CONFERENCES);
+    feuille.getRange(1, 1, feuille.getMaxRows(), COLONNES_CONFERENCES.length).setNumberFormat('@');
+    feuille.getRange(1, 1, 1, COLONNES_CONFERENCES.length).setValues([COLONNES_CONFERENCES]);
+    mettreEnForme(feuille, COLONNES_CONFERENCES, 2, 0);
+    feuille.getRange(1, 1, feuille.getMaxRows(), COLONNES_CONFERENCES.length).createFilter();
+    protegerEntete(feuille);
+  }
+  Logger.log('Onglet « ' + ONGLET_CONFERENCES + ' » : gid = ' + feuille.getSheetId() + ' (à mettre dans config.js, ligne conferences:)');
 }

@@ -65,6 +65,20 @@ chaque fichier est rattaché à son article et le bouton **PDF** apparaît sur l
 Installation (une seule fois), dans l'éditeur Apps Script du tableau, après y avoir recollé
 `outils/tableau.gs` : *Services ＋ → Drive API → Ajouter*, puis exécuter la fonction `installerPdf`.
 
+## Conférences
+
+La page Conférences lit l'onglet **« Conférences »** du tableau (même fonctionnement que les publications :
+`masquer`, `verrouille`, `notes`, et la collecte ne remplit que les cases vides). La collecte y ajoute les exposés,
+communications et posters déposés dans **DIAL**, le dépôt de l'UCLouvain (surtout 2014-2016) ; le reste s'ajoute à la main.
+
+Colonnes : `id` (code unique, par exemple `manuel-2019-lille`), `date` (`AAAA-MM-JJ`, ou seulement `AAAA`), `titre`,
+`congres`, `lieu`, `type` (conférence, communication, poster, atelier…), `langue`, `orateurs`, `lien_info`,
+`lien_diapos`, `lien_video`, `notes`, `masquer`, `verrouille`, `sources`, `ajoute_le`.
+
+Installation (une seule fois) : recoller `outils/tableau.gs` dans Apps Script, exécuter `installerConferences`,
+faire *Déployer → Gérer les déploiements → ✎ → Nouvelle version*, puis mettre le numéro (gid) affiché dans le
+journal dans `config.js`, ligne `conferences:`. Tant que ce numéro est vide, la page lit `donnees/conferences.csv`.
+
 ## Lancer la collecte à la main
 
 ```sh

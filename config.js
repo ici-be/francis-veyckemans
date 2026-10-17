@@ -3,6 +3,8 @@ window.CONFIG = {
   // identifiant du tableau Google Sheets des publications : la partie entre /d/ et /edit de son adresse
   // (vide : le site lit donnees/publications.csv)
   tableau: "17bUrP_chpuZXRbxyL96DIlUFHj47GjZQdmftGOaZ0JU",
+  // numéro (gid) de l'onglet « Conférences » du même tableau (vide : le site lit donnees/conferences.csv)
+  conferences: "",
   // périodes affichées au-dessus du graphique (« a » vide : jusqu'à aujourd'hui)
   periodes: [
     { de: 1985, a: 1995, nom: "Transplantation hépatique" },
