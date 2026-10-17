@@ -239,7 +239,7 @@ def lire_openalex(w):
     elif RESUME_CONGRES.search(norm_doi(w.get("doi"))) or re.match(r"^([A-Z]{1,2}[\.-]?\d+[\.:]? |Room )", titre):
         type_ = "résumé de congrès"
     elif not w.get("doi") and re.search(r"DIAL|Digital Access|Lirias", revue):
-        type_ = type_ or "dépôt universitaire (DIAL, Lirias)"
+        type_ = type_ or "dépôt universitaire"
     return {
         "annee": str(w.get("publication_year") or ""),
         "titre": titre,

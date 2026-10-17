@@ -46,7 +46,7 @@ Colonnes : `id`, `annee`, `titre`, `auteurs` (séparés par des virgules), `revu
 
 Le `type` est libre ; les types existants : article, étude clinique, revue de la littérature,
 recommandations, éditorial, commentaire, cas clinique, chapitre de livre, livre,
-résumé de congrès, avis Faculty Opinions (F1000), dépôt universitaire (DIAL, Lirias), erratum.
+résumé de congrès, avis Faculty Opinions (F1000), dépôt universitaire, erratum.
 
 ## Ajouter des PDF (dossier Google Drive)
 
