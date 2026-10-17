@@ -19,12 +19,15 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
 - donnees/citations.csv : nombre de citations de chaque publication (OpenAlex), réécrit à chaque fois ;
 - donnees/coauteurs.csv : forme complète « Nom Prénom » des variantes de noms d'auteurs
   (« Pirotte T », « Thierry Pirotte » → « Pirotte Thierry »). Les lignes existantes, éventuellement
-  corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées.
+  corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées ;
+- donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
+  revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
+  éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
 
 Usage :
   python3 outils/collecter.py                       collecte et envoi au tableau
   python3 outils/collecter.py --simulation          affiche ce qui changerait, sans rien écrire
-  python3 outils/collecter.py annexes               met à jour seulement citations.csv et coauteurs.csv
+  python3 outils/collecter.py annexes               met à jour seulement citations.csv, coauteurs.csv et lectures.csv
   python3 outils/collecter.py copie                 copie le tableau dans donnees/publications.csv
   python3 outils/collecter.py configurer URL CLÉ    enregistre l'accès au script du tableau
                                                     (dans ~/.config/archives-fv/, hors du dépôt)
@@ -48,6 +51,7 @@ RACINE = Path(__file__).resolve().parent.parent
 FICHIER = RACINE / "donnees" / "publications.csv"
 CITATIONS = RACINE / "donnees" / "citations.csv"
 COAUTEURS = RACINE / "donnees" / "coauteurs.csv"
+LECTURES = RACINE / "donnees" / "lectures.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -533,6 +537,76 @@ def ecrire_coauteurs(fiches, trouvees):
     print(f"Écrit : {COAUTEURS.relative_to(RACINE)} ({len(alias)} lignes, {ajoutes} nouvelle(s))", file=sys.stderr)
 
 
+# ---------------------------------------------------------------- lectures commentées (Faculty Opinions)
+
+COLONNES_LECTURES = ["id", "doi", "titre", "auteurs", "revue", "annee", "pmid", "pdf"]
+PREFIXE_AVIS = re.compile(r"^Faculty Opinions recommendation of\s*", re.I)
+
+
+def ecrire_lectures(fiches):
+    """L'article commenté par chaque avis : relation « is-review-of » de Crossref, sinon titre exact."""
+    lignes = {}
+    if LECTURES.exists():
+        with LECTURES.open(newline="", encoding="utf-8") as f:
+            lignes = {l["id"]: l for l in csv.DictReader(f) if l.get("id")}
+    a_chercher = {}
+    for f in fiches:
+        if f.get("id") and PREFIXE_AVIS.match(f.get("titre") or "") and f["id"] not in lignes:
+            doi = commente_par(f)
+            if doi:
+                a_chercher[f["id"]] = doi
+            time.sleep(0.1)
+    details = details_openalex(list(set(a_chercher.values())))
+    for id_, doi in a_chercher.items():
+        lignes[id_] = {"id": id_, "doi": doi, **details.get(doi, {})}
+    with LECTURES.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLONNES_LECTURES, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(sorted(lignes.values(), key=lambda l: l["id"]))
+    print(f"Écrit : {LECTURES.relative_to(RACINE)} ({len(lignes)} lignes, {len(a_chercher)} nouvelle(s))", file=sys.stderr)
+
+
+def commente_par(fiche):
+    """DOI de l'article commenté par un avis Faculty Opinions."""
+    if fiche.get("doi", "").startswith("10.3410/"):
+        try:
+            rel = get(f"https://api.crossref.org/works/{fiche['doi']}").json()["message"].get("relation", {})
+            for r in rel.get("is-review-of", []):
+                if r.get("id-type") == "doi":
+                    return norm_doi(r["id"])
+        except requests.RequestException:
+            pass
+    titre = PREFIXE_AVIS.sub("", fiche.get("titre") or "")
+    try:
+        items = get("https://api.crossref.org/works", params={"query.bibliographic": titre, "rows": 3}).json()["message"]["items"]
+    except requests.RequestException:
+        return ""
+    for it in items:
+        if cle_titre((it.get("title") or [""])[0]) == cle_titre(titre) and not it["DOI"].startswith("10.3410/"):
+            return norm_doi(it["DOI"])
+    return ""
+
+
+def details_openalex(dois):
+    details = {}
+    for i in range(0, len(dois), 50):
+        d = get("https://api.openalex.org/works", params={
+            "filter": "doi:" + "|".join(dois[i:i + 50]), "per_page": 50,
+            "select": "doi,title,publication_year,authorships,primary_location,best_oa_location,ids",
+        }).json()
+        for w in d["results"]:
+            noms = [a["author"].get("display_name") or "" for a in w.get("authorships", [])]
+            details[norm_doi(w.get("doi"))] = {
+                "titre": nettoyer(w.get("title")),
+                "auteurs": ", ".join(noms[:3]) + (" et al." if len(noms) > 3 else ""),
+                "revue": (((w.get("primary_location") or {}).get("source")) or {}).get("display_name") or "",
+                "annee": str(w.get("publication_year") or ""),
+                "pmid": ((w.get("ids") or {}).get("pmid") or "").rsplit("/", 1)[-1],
+                "pdf": (w.get("best_oa_location") or {}).get("pdf_url") or "",
+            }
+    return details
+
+
 # ---------------------------------------------------------------- tableau Google Sheets
 
 CONFIG_LOCALE = Path.home() / ".config" / "archives-fv" / "config.json"
@@ -668,6 +742,7 @@ def main():
 
     ecrire_citations(paires)
     ecrire_coauteurs(index.fiches, trouvees)
+    ecrire_lectures(index.fiches)
     if annexes:
         return
 

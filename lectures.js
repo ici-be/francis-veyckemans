@@ -4,9 +4,15 @@
 
   const { $, sansAccents, echapper, estAvis, pluriel } = FV;
   let avis = [];
+  let commentes = {};  // id de l'avis → article commenté (donnees/lectures.csv)
 
-  FV.charger()
-    .then((liste) => {
+  const lectures = fetch("donnees/lectures.csv", { cache: "no-cache" })
+    .then((r) => (r.ok ? r.text() : ""))
+    .catch(() => "")
+    .then((texte) => Papa.parse(texte, { header: true, skipEmptyLines: true }).data.forEach((l) => (commentes[l.id] = l)));
+
+  Promise.all([FV.charger(), lectures])
+    .then(([liste]) => {
       avis = liste.filter(estAvis).sort((a, b) => b._annee - a._annee || sansAccents(a._titre).localeCompare(sansAccents(b._titre)));
       const annees = avis.map((p) => p._annee).filter(Boolean);
       if (avis.length)
@@ -19,7 +25,8 @@
 
   function afficher() {
     const mots = sansAccents($("#recherche").value).split(/\s+/).filter(Boolean);
-    const liste = avis.filter((p) => mots.every((m) => sansAccents(p._titre).includes(m)));
+    const texte = (p) => sansAccents([p._titre, ...Object.values(commentes[p.id] || {})].join(" "));
+    const liste = avis.filter((p) => mots.every((m) => texte(p).includes(m)));
     $("#compte").textContent = liste.length === avis.length ? pluriel(avis.length, "lecture") : `${liste.length} sur ${avis.length}`;
     const parAnnee = {};
     liste.forEach((p) => (parAnnee[p.annee || "—"] = parAnnee[p.annee || "—"] || []).push(p));
@@ -27,12 +34,29 @@
       <section class="lectures-annee">
         <h2>${echapper(a)}</h2>
         <ul class="lectures-liste">${parAnnee[a].map((p) => `
-          <li>
-            <span class="titre">${echapper(p._titre)}</span>
-            ${p.lien_info ? `<a href="${echapper(p.lien_info)}" target="_blank" rel="noopener">Lire l'avis</a>` : ""}
-          </li>`).join("")}
+          <li>${lecture(p)}</li>`).join("")}
         </ul>
       </section>`).join("");
+  }
+
+  // l'avis, puis la référence de l'article commenté et ses liens
+  function lecture(p) {
+    const c = commentes[p.id] || {};
+    const lien = (url, texte) => `<a href="${echapper(url)}" target="_blank" rel="noopener">${texte}</a>`;
+    const ref = [c.auteurs, c.revue ? `<i>${echapper(c.revue)}</i>` : "", c.annee].filter(Boolean)
+      .map((x, i) => (i === 1 ? x : echapper(x))).join(", ");
+    const liens = [
+      p.lien_info && lien(p.lien_info, "Lire l'avis"),
+      c.doi && lien(`https://doi.org/${c.doi}`, "Article commenté"),
+      c.pmid && lien(`https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(c.pmid)}/`, "PubMed"),
+      c.pdf && lien(c.pdf, "PDF"),
+    ].filter(Boolean);
+    return `
+            <div class="lecture">
+              <span class="titre">${echapper(p._titre)}</span>
+              ${ref ? `<span class="lecture-ref">${ref}</span>` : ""}
+            </div>
+            <span class="lecture-liens">${liens.join("")}</span>`;
   }
 
   let attente;

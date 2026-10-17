@@ -282,7 +282,9 @@ td.revue i { color: var(--encre); font-style: italic; }
 .lectures-annee h2 { font-variant-numeric: tabular-nums; color: var(--encre-2); }
 .lectures-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .lectures-liste li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-.lectures-liste .titre { flex: 1 1 400px; }
+.lectures-liste .lecture { flex: 1 1 400px; display: flex; flex-direction: column; gap: 2px; }
+.lectures-liste .lecture-ref { font-size: 14px; color: var(--encre-2); }
+.lectures-liste .lecture-liens { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .lectures-liste a { font-size: 14px; font-weight: 600; white-space: nowrap; }
 
 .tableau.coauteurs td { padding: 9px 14px; }
