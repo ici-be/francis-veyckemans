@@ -5,6 +5,9 @@ window.FVCarte = (function () {
 
   const echapper = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let chargement = null;
+  // carte réduite par défaut (pour voir le tableau en dessous) ; le choix du visiteur est retenu
+  let grande = false;
+  try { grande = localStorage.getItem("fv-carte-grande") === "1"; } catch (e) { /* stockage indisponible */ }
 
   // les paramètres des cartes et leurs fonds SVG, chargés une seule fois
   function charger() {
@@ -46,7 +49,7 @@ window.FVCarte = (function () {
   }
 
   function fond(carte, contenu, extra = "") {
-    return `<div class="carte" style="aspect-ratio:${carte.w}/${carte.h}">${carte.svg}${extra}${contenu}</div>`;
+    return `<div class="carte" style="aspect-ratio:${carte.w}/${carte.h};--ratio:${(carte.w / carte.h).toFixed(4)}">${carte.svg}${extra}${contenu}</div>`;
   }
 
   // noms des villes : à droite du point, sinon à gauche, sinon cachés s'ils chevauchent un autre nom ou un point
@@ -117,12 +120,14 @@ window.FVCarte = (function () {
       const sansCarteHTML = sansCarte.length
         ? `<p class="carte-sans">Sans position connue : ${sansCarte.map((l) => echapper(l.ville)).join(", ")}.</p>` : "";
 
+      const libelle = () => (grande ? "Réduire la carte" : "Agrandir la carte");
+      conteneur.classList.toggle("carte-compacte", !grande);
       conteneur.innerHTML = `
+        <button type="button" class="lien-bouton carte-taille" aria-expanded="${grande}">${libelle()}</button>
         <div class="carte-bloc">
           ${europeHTML}
-          <div class="carte-cote">${belgiqueHTML}${ailleursHTML}</div>
+          <div class="carte-cote">${belgiqueHTML}${ailleursHTML}<p class="carte-detail" aria-live="polite"></p></div>
         </div>
-        <p class="carte-detail" aria-live="polite"></p>
         ${sansCarteHTML}`;
 
       placerNoms(conteneur);
@@ -149,6 +154,16 @@ window.FVCarte = (function () {
       conteneur.onfocusin = conteneur.onmouseover;
       conteneur.onmouseleave = () => montrer(choisie);
       conteneur.onclick = (e) => {
+        const taille = e.target.closest(".carte-taille");
+        if (taille) {
+          grande = !grande;
+          try { localStorage.setItem("fv-carte-grande", grande ? "1" : "0"); } catch (err) { /* stockage indisponible */ }
+          conteneur.classList.toggle("carte-compacte", !grande);
+          taille.textContent = libelle();
+          taille.setAttribute("aria-expanded", String(grande));
+          placerNoms(conteneur);
+          return;
+        }
         if (e.target.closest("[data-effacer]")) return options.surChoix && options.surChoix(null);
         const b = e.target.closest(".carte-point");
         if (b && options.surChoix) options.surChoix(b.dataset.ville === choisie ? null : b.dataset.ville);

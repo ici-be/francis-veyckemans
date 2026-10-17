@@ -399,6 +399,22 @@ td.revue i { color: var(--encre); font-style: italic; }
 .carte-detail b { color: var(--encre); }
 .carte-liste { display: block; margin-top: 2px; }
 .carte-sans { margin: 6px 0 0; font-size: 13px; color: var(--encre-3); }
+.carte-section { position: relative; }
+.carte-taille { position: absolute; top: 16px; right: 18px; font-size: 14px; z-index: 1; }
+/* carte réduite : les fonds tiennent sur une hauteur fixe, côte à côte, pour laisser voir le tableau */
+@media (min-width: 761px) {
+  .carte-compacte { --hauteur: 210px; padding: 14px 18px; }
+  .carte-compacte .carte-bloc figcaption, .carte-compacte .carte-titre { font-size: 15px; margin-bottom: 4px; }
+  .carte-compacte .carte-bloc { gap: 20px; }
+  .carte-compacte .carte-principale, .carte-compacte .carte-cote { flex: none; }
+  .carte-compacte .carte-cote { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 20px; flex: 1 1 260px; min-width: 0; }
+  .carte-compacte .carte-cote .carte-detail { flex: 1 1 200px; margin: 24px 0 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid var(--trait); }
+  .carte-compacte .carte-principale .carte, .carte-compacte .carte-zoom .carte {
+    width: calc(var(--hauteur) * var(--ratio)); height: var(--hauteur); aspect-ratio: auto;
+  }
+  .carte-compacte .carte-ailleurs { width: 170px; }
+  .carte-compacte .carte-petites { grid-template-columns: 1fr; gap: 8px; }
+}
 
 @media (max-width: 760px) {
   .tableau thead { display: none; }
