@@ -198,7 +198,7 @@ h2 {
 .tableau tbody tr:hover { background: var(--ligne-survol); }
 .col-annee { width: 76px; }
 .col-revue { width: 22%; }
-.col-type { width: 140px; }
+.col-type { width: 1%; }  /* aussi étroite que la plus longue pastille */
 .col-liens { width: 150px; }
 .col-citations { width: 92px; }
 td.citations { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); font-size: 14px; }
@@ -216,6 +216,7 @@ td.revue i { color: var(--encre); font-style: italic; }
   font-size: 12px;
   font-weight: 600;
   line-height: 1.5;
+  white-space: nowrap;  /* sur deux lignes, la pastille prendrait toute la largeur de la colonne */
   background: var(--p-autre); color: var(--p-autre-t);
 }
 .pastille.article { background: var(--p-article); color: var(--p-article-t); }
