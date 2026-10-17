@@ -1,6 +1,9 @@
-// Réglages du site, à adapter une fois le dépôt GitHub créé.
+// Réglages du site.
 window.CONFIG = {
-  // dépôt GitHub qui héberge le site (« utilisateur/nom-du-depot ») : sert au lien « Proposer une correction »
+  // identifiant du tableau Google Sheets des publications : la partie entre /d/ et /edit de son adresse
+  // (vide : le site lit donnees/publications.csv)
+  tableau: "",
+  // dépôt GitHub qui héberge le site (« utilisateur/nom-du-depot »)
   depot: "ici-be/francis-veyckemans",
   branche: "main",
 };

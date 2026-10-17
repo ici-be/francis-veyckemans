@@ -27,16 +27,36 @@
 
   // ---------------------------------------------------------------- chargement
 
-  fetch("donnees/publications.csv", { cache: "no-cache" })
-    .then((r) => {
+  const CONF = window.CONFIG || {};
+
+  // le tableau Google Sheets d'abord ; s'il est injoignable, la copie du dépôt
+  function telecharger() {
+    const copie = () => fetch("donnees/publications.csv", { cache: "no-cache" }).then((r) => {
+      if (!r.ok) throw new Error("erreur " + r.status);
       const date = r.headers.get("Last-Modified");
-      if (date) $("#maj").textContent = new Date(date).toLocaleDateString("fr-BE", { year: "numeric", month: "long", day: "numeric" });
+      if (date) $("#maj").textContent = "— copie du " + new Date(date).toLocaleDateString("fr-BE", { year: "numeric", month: "long", day: "numeric" });
       return r.text();
-    })
+    });
+    if (!CONF.tableau) return copie();
+    return fetch(`https://docs.google.com/spreadsheets/d/${CONF.tableau}/export?format=csv&gid=0&t=${Date.now()}`, { cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw new Error("erreur " + r.status);
+        return r.text();
+      })
+      .then((texte) => {
+        if (!/^id,/.test(texte)) throw new Error("tableau illisible");
+        $("#maj").textContent = "— en direct du tableau";
+        return texte;
+      })
+      .catch(copie);
+  }
+
+  telecharger()
     .then((texte) => {
       const { data } = Papa.parse(texte, { header: true, skipEmptyLines: true });
       toutes = data
-        .filter((p) => !/^(oui|x|1)$/i.test((p.masquer || "").trim()))
+        .filter((p) => p.id || p.titre)
+        .filter((p) => !/^(oui|x|1|true|vrai)$/i.test((p.masquer || "").trim()))
         .map(preparer);
       remplirTypes();
       lireAdresse();
@@ -257,8 +277,8 @@
     if (p) b.parentElement.innerHTML = auteursHTML(p, true);
   });
 
-  const c = window.CONFIG || {};
-  $("#lien-corriger").href = c.depot
-    ? `https://github.com/${c.depot}/edit/${c.branche || "main"}/donnees/publications.csv`
-    : "#";
+  if (CONF.tableau) $("#lien-corriger").textContent = "Tableau des données";
+  $("#lien-corriger").href = CONF.tableau
+    ? `https://docs.google.com/spreadsheets/d/${CONF.tableau}/edit`
+    : `https://github.com/${CONF.depot}/edit/${CONF.branche || "main"}/donnees/publications.csv`;
 })();

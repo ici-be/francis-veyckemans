@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collecte les publications de Francis Veyckemans et complète donnees/publications.csv.
+"""Collecte les publications de Francis Veyckemans et complète le tableau Google Sheets.
 
 Sources interrogées : PubMed, OpenAlex (qui inclut les données d'Unpaywall pour les PDF
 en accès libre) et son profil ORCID.
@@ -7,14 +7,26 @@ en accès libre) et son profil ORCID.
 Règles, pour que les corrections faites à la main ne soient jamais perdues :
 - une ligne déjà présente n'est jamais supprimée ;
 - une case déjà remplie n'est jamais modifiée : le script ne remplit que les cases vides ;
-- une ligne avec « oui » dans la colonne verrouille n'est pas touchée du tout ;
-- un article nouveau est ajouté à la fin, avec la date du jour dans ajoute_le.
+- une ligne dont la case « verrouille » est cochée n'est pas touchée du tout ;
+- un article nouveau est ajouté, avec la date du jour dans ajoute_le.
 
-Usage : python3 outils/collecter.py [--simulation]
-  --simulation : affiche ce qui changerait, sans écrire le fichier.
+Le tableau est celui de config.js (tableau: "…"). Le script lit le tableau, cherche les
+nouveautés et les envoie au script du tableau (outils/tableau.gs), qui les écrit. Il enregistre
+ensuite une copie du tableau dans donnees/publications.csv (secours si Google est injoignable).
+Sans tableau dans config.js, c'est donnees/publications.csv qui est complété directement.
+
+Usage :
+  python3 outils/collecter.py                       collecte et envoi au tableau
+  python3 outils/collecter.py --simulation          affiche ce qui changerait, sans rien écrire
+  python3 outils/collecter.py copie                 copie le tableau dans donnees/publications.csv
+  python3 outils/collecter.py configurer URL CLÉ    enregistre l'accès au script du tableau
+                                                    (dans ~/.config/archives-fv/, hors du dépôt)
+Sur GitHub, l'URL et la clé viennent des secrets ARCHIVES_URL et ARCHIVES_CLE.
 """
 import csv
 import datetime
+import json
+import os
 import re
 import sys
 import time
@@ -322,12 +334,87 @@ def nouvel_id(fiche, pris):
     return id_
 
 
+def oui(v):
+    return (v or "").strip().lower() in ("oui", "x", "1", "true", "vrai")
+
+
+# ---------------------------------------------------------------- tableau Google Sheets
+
+CONFIG_LOCALE = Path.home() / ".config" / "archives-fv" / "config.json"
+
+
+def id_tableau():
+    """SHEET_ID lu dans config.js, pour n'avoir qu'un seul endroit où le changer."""
+    m = re.search(r'tableau:\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
+    return m.group(1) if m else ""
+
+
+def lire_tableau(sheet_id):
+    r = get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export", params={"format": "csv", "gid": 0})
+    r.encoding = "utf-8"
+    return list(csv.DictReader(r.text.splitlines()))
+
+
+def acces_script():
+    """URL et clé du script du tableau : variables d'environnement (GitHub) ou fichier local."""
+    url, cle = os.environ.get("ARCHIVES_URL"), os.environ.get("ARCHIVES_CLE")
+    if not (url and cle) and CONFIG_LOCALE.exists():
+        c = json.loads(CONFIG_LOCALE.read_text())
+        url, cle = c.get("url"), c.get("cle")
+    if not (url and cle):
+        sys.exit("Script du tableau non configuré : python3 outils/collecter.py configurer <URL> <clé>")
+    return url, cle
+
+
+def envoyer(url, cle, ajouter, completer_, essai=False):
+    r = session.post(url, data=json.dumps({"cle": cle, "ajouter": ajouter, "completer": completer_, "essai": essai}),
+                     headers={"Content-Type": "text/plain"}, timeout=300)  # text/plain : pas de pré-vol CORS
+    r.raise_for_status()
+    rep = r.json()
+    if rep.get("erreur"):
+        sys.exit("Le script du tableau a refusé l'envoi : " + rep["erreur"])
+    return rep
+
+
+def ecrire_csv(lignes):
+    FICHIER.parent.mkdir(exist_ok=True)
+    with FICHIER.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLONNES, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(lignes)
+    print(f"Écrit : {FICHIER.relative_to(RACINE)} ({len(lignes)} lignes)", file=sys.stderr)
+
+
+# ---------------------------------------------------------------- programme
+
 def main():
-    simulation = "--simulation" in sys.argv
-    existantes = []
-    if FICHIER.exists():
-        with FICHIER.open(newline="", encoding="utf-8") as f:
-            existantes = list(csv.DictReader(f))
+    args = sys.argv[1:]
+    if args[:1] == ["configurer"]:
+        if len(args) != 3:
+            sys.exit("Usage : python3 outils/collecter.py configurer <URL du script> <clé>")
+        CONFIG_LOCALE.parent.mkdir(parents=True, exist_ok=True)
+        CONFIG_LOCALE.write_text(json.dumps({"url": args[1], "cle": args[2]}))
+        CONFIG_LOCALE.chmod(0o600)
+        print(f"Enregistré dans {CONFIG_LOCALE}", file=sys.stderr)
+        return
+
+    sheet_id = id_tableau()
+    if args[:1] == ["copie"]:
+        if not sheet_id:
+            sys.exit("Aucun tableau dans config.js.")
+        ecrire_csv(lire_tableau(sheet_id))
+        return
+
+    simulation = "--simulation" in args
+    if sheet_id:
+        url, cle = (None, None) if simulation else acces_script()
+        existantes = lire_tableau(sheet_id)
+        print(f"Tableau : {len(existantes)} lignes", file=sys.stderr)
+    else:
+        existantes = []
+        if FICHIER.exists():
+            with FICHIER.open(newline="", encoding="utf-8") as f:
+                existantes = list(csv.DictReader(f))
 
     index = Index()
     for f in existantes:
@@ -350,13 +437,14 @@ def main():
                 fiche["notes"] = "masqué automatiquement (erratum)"
             index.ajouter(fiche)
             nouvelles.append(fiche)
-        if fiche.get("verrouille", "").strip().lower() == "oui":
+        if oui(fiche.get("verrouille")):
             continue
         remplies = completer(fiche, r)
         sources = [s for s in (fiche.get("sources") or "").split(", ") if s]
         if r["_source"] not in sources:
             sources.append(r["_source"])
             fiche["sources"] = ", ".join(sources)
+            remplies.append("sources")
         if remplies and fiche not in nouvelles:
             modifiees.setdefault(id(fiche), (fiche, set()))[1].update(remplies)
         index.indexer(fiche)  # un DOI ou PMID découvert permet d'autres rapprochements
@@ -367,22 +455,32 @@ def main():
         f["id"] = nouvel_id(f, pris)
         pris.add(f["id"])
 
-    print(f"\n{len(nouvelles)} publication(s) nouvelle(s), {len(modifiees)} complétée(s).", file=sys.stderr)
-    for f, cols in modifiees.values():
+    completees = [(f, cols - {"sources"}) for f, cols in modifiees.values() if cols - {"sources"}]
+    print(f"\n{len(nouvelles)} publication(s) nouvelle(s), {len(completees)} complétée(s).", file=sys.stderr)
+    for f, cols in completees:
         print(f"  complétée : {f['id']} ({', '.join(sorted(cols))})", file=sys.stderr)
     if simulation:
         for f in nouvelles:
             print(f"  nouvelle : {f['annee']} {f['titre'][:90]}", file=sys.stderr)
         return
 
+    if sheet_id:
+        a_completer = [{
+            "id": f["id"],
+            "remplir": {c: f[c] for c in cols if c != "sources"},
+            "remplacer": {"sources": f["sources"]} if "sources" in cols else {},
+        } for f, cols in modifiees.values()]
+        if nouvelles or a_completer:
+            rep = envoyer(url, cle, [{c: f.get(c, "") for c in COLONNES} for f in nouvelles], a_completer)
+            print(f"Tableau : {len(rep['ajoutees'])} ajoutée(s), {len(rep['completees'])} complétée(s)", file=sys.stderr)
+            for i in rep["ignorees"]:
+                print(f"  ignorée : {i}", file=sys.stderr)
+        ecrire_csv(lire_tableau(sheet_id))  # copie de secours dans le dépôt
+        return
+
     toutes = existantes + nouvelles
     toutes.sort(key=lambda f: (-(int(f["annee"]) if f.get("annee", "").isdigit() else 0), f.get("titre", "")))
-    FICHIER.parent.mkdir(exist_ok=True)
-    with FICHIER.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLONNES, extrasaction="ignore")
-        w.writeheader()
-        w.writerows(toutes)
-    print(f"Écrit : {FICHIER.relative_to(RACINE)} ({len(toutes)} lignes)", file=sys.stderr)
+    ecrire_csv(toutes)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,16 @@
-# Met à jour la liste des publications, puis publie le site sur GitHub Pages.
-# - à chaque « git push » sur main (par exemple après une correction faite à la main)
-# - le 1er de chaque mois : cherche les nouvelles publications (PubMed, OpenAlex, ORCID)
+# Cherche les nouvelles publications, puis publie le site sur GitHub Pages.
+# - à chaque « git push » sur main : publie seulement
+# - chaque lundi : cherche les nouvelles publications (PubMed, OpenAlex, ORCID), les envoie au
+#   tableau Google Sheets et garde une copie du tableau dans donnees/publications.csv
 # - à la demande : onglet Actions → Publier → Run workflow
+# Les corrections faites dans le tableau sont visibles tout de suite : le site lit le tableau en direct.
+# Secrets nécessaires (Settings → Secrets and variables → Actions) : ARCHIVES_URL et ARCHIVES_CLE.
 name: Publier
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '23 5 1 * *'
+    - cron: '23 5 * * 1'
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   collecter:
-    # la collecte ne tourne qu'une fois par mois ou à la demande, pas à chaque correction
+    # la collecte ne tourne qu'une fois par semaine ou à la demande, pas à chaque push
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
@@ -28,13 +31,16 @@ jobs:
           python-version: '3.12'
       - run: pip install requests
       - run: python outils/collecter.py
+        env:
+          ARCHIVES_URL: ${{ secrets.ARCHIVES_URL }}
+          ARCHIVES_CLE: ${{ secrets.ARCHIVES_CLE }}
       - name: Enregistrer les nouveautés
         run: |
           git add donnees/publications.csv
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Publications : mise à jour automatique"
+            git commit -m "Publications : copie du tableau"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
