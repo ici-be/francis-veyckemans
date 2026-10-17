@@ -154,7 +154,7 @@
         </td>
         <td class="revue">${revueHTML(p)}</td>
         <td class="type"><span class="pastille ${famille(p.type)}">${echapper(valeur(p.type))}</span></td>
-        <td class="citations">${p._citations ? citationsHTML(p, p._citations) : ""}</td>
+        <td class="citations">${p._citations ? citationsHTML(p, `${p._citations}<span class="unite"> ${I18N.accord(p._citations, "citation")}</span>`) : ""}</td>
         <td class="liens-cell">${liensHTML(p)}</td>
       </tr>`).join("");
   }

@@ -217,6 +217,7 @@ h2 {
 .col-liens { width: 150px; }
 .col-citations { width: 92px; }
 td.citations { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); font-size: 14px; }
+td.citations .unite { display: none; }  /* « citation(s) » après le nombre, sur mobile seulement */
 /* lien vers les articles citants (OpenAlex) */
 .citants { color: inherit; text-decoration: underline dotted var(--encre-3); text-underline-offset: 3px; }
 .citants:hover { color: var(--accent); text-decoration-color: currentColor; }
@@ -443,7 +444,7 @@ main.largeur { padding-bottom: 72px; }  /* plus précis que .largeur, qui remet 
   td.type { grid-column: 2; grid-row: 1; }
   td.titre-cell, td.revue, td.liens-cell { grid-column: 1 / -1; }
   td.citations { grid-column: 1 / -1; text-align: left; }
-  td.citations span::after { content: " citations"; }
+  td.citations .unite { display: inline; }
   .tableau.coauteurs tr { grid-template-columns: 1fr auto; }
   .tableau.coauteurs td { padding: 0; }
   .tableau.coauteurs td.periode-cell { grid-column: 1 / -1; }
