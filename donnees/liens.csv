@@ -1,37 +1,37 @@
 id,categorie,nom,description,url,langue,masquer
-sfar,Sociétés d'anesthésie,SFAR,"Société française d'anesthésie et de réanimation : congrès, recommandations, journées SFAR Jeunes Pédiatrique",https://sfar.org/,français,
-adarpef,Sociétés d'anesthésie,ADARPEF,Association des anesthésistes-réanimateurs pédiatriques d'expression française,https://www.adarpef.org/,français,
-espa,Sociétés d'anesthésie,ESPA,European Society for Paediatric Anaesthesiology,https://www.euroespa.com/,anglais,
-esaic,Sociétés d'anesthésie,ESAIC,"European Society of Anaesthesiology and Intensive Care : congrès Euroanaesthesia, recommandations",https://www.esaic.org/,anglais,
-sarb,Sociétés d'anesthésie,SARB,Society for Anesthesia and Resuscitation of Belgium,https://www.sarb.be/,anglais,
-bapa,Sociétés d'anesthésie,BAPA,Belgian Association for Paediatric Anaesthesia,https://www.bapanaesth.be/,anglais,
-spa,Sociétés d'anesthésie,Society for Pediatric Anesthesia,Société américaine d'anesthésie pédiatrique (série de podcasts « Ask the Expert » avec OpenAnesthesia),https://pedsanesthesia.org/,anglais,
-apa,Sociétés d'anesthésie,APA,Association of Paediatric Anaesthetists of Great Britain and Ireland,https://www.apagbi.org.uk/,anglais,
-sarnepi,Sociétés d'anesthésie,SARNePI,Società di Anestesia e Rianimazione Neonatale e Pediatrica Italiana,https://www.sarnepi.it/,italien,
-wfsa,Sociétés d'anesthésie,WFSA,World Federation of Societies of Anaesthesiologists : l'anesthésie dans le monde,https://wfsahq.org/,anglais,
-pan,Revues,Paediatric Anaesthesia,Revue internationale d'anesthésie pédiatrique (Wiley),https://onlinelibrary.wiley.com/journal/14609592,anglais,
-eja,Revues,European Journal of Anaesthesiology,Revue de l'ESAIC,https://journals.lww.com/ejanaesthesiology,anglais,
-bja,Revues,British Journal of Anaesthesia,,https://www.bjanaesthesia.org/,anglais,
-accpm,Revues,Anaesthesia Critical Care & Pain Medicine,Revue de la SFAR (anglais),https://www.sciencedirect.com/journal/anaesthesia-critical-care-and-pain-medicine,anglais,
-anrea,Revues,Anesthésie & Réanimation,Revue de la SFAR (français),https://www.sciencedirect.com/journal/anesthesie-and-reanimation,français,
-aab,Revues,Acta Anaesthesiologica Belgica,Revue de la SARB,http://www.actaanaesthesiologica.be/,anglais,
-anesthesiology,Revues,Anesthesiology,Revue de l'American Society of Anesthesiologists,https://pubs.asahq.org/anesthesiology,anglais,
-aa,Revues,Anesthesia & Analgesia,,https://journals.lww.com/anesthesia-analgesia,anglais,
-mrp,Maladies rares,Syndromes & maladies rares en pédiatrie : anesthésie,Base de données tenue avec Jean-Louis Scholtes (version française),https://sites.uclouvain.be/anesthweekly/MRP/,français,
-mrp-en,Maladies rares,Syndromes & rare diseases in pediatrics: anesthesia,La même base de données en anglais,https://sites.uclouvain.be/anesthweekly/MRP_ENG/,anglais,
-orphanet,Maladies rares,Orphanet,"Portail des maladies rares et des médicaments orphelins",https://www.orpha.net/,français,
-orphananesthesia,Maladies rares,OrphanAnesthesia,Recommandations d'anesthésie pour les patients atteints de maladies rares,https://www.orphananesthesia.eu/,anglais,
-omim,Maladies rares,OMIM,Online Mendelian Inheritance in Man : catalogue des maladies génétiques,https://www.omim.org/,anglais,
-openanesthesia,Formation,OpenAnesthesia,"Ressources de formation et podcasts en anesthésie",https://www.openanesthesia.org/,anglais,
-sfar-yt,Formation,SFAR sur YouTube,Conférences filmées des congrès et journées de la SFAR,https://www.youtube.com/@sfar_officiel,français,
-sarb-yt,Formation,SARB sur YouTube,Conférences filmées de la SARB,https://www.youtube.com/@SARBBelgium,français,
-esaic-academy,Formation,ESAIC Academy,Contenus de formation de l'ESAIC (en partie réservés aux membres),https://academy.esaic.org/,anglais,
-saintluc,Institutions,Cliniques universitaires Saint-Luc,"Bruxelles, hôpital universitaire de l'UCLouvain",https://www.saintluc.be/,français,
-uclouvain,Institutions,UCLouvain,Université catholique de Louvain,https://uclouvain.be/,français,
-chu-lille,Institutions,CHU de Lille,Hôpital Jeanne de Flandre,https://www.chu-lille.fr/,français,
-chaine-espoir,Humanitaire,La Chaîne de l'Espoir,"Organisation humanitaire de chirurgie, notamment pédiatrique",https://www.chainedelespoir.org/,français,
-pubmed,Sources de ces archives,PubMed,Ses articles indexés dans PubMed,https://pubmed.ncbi.nlm.nih.gov/?term=Veyckemans+F%5BAuthor%5D,anglais,
-openalex,Sources de ces archives,OpenAlex,Index bibliographique ouvert,https://openalex.org/authors/A5031410557,anglais,
-orcid,Sources de ces archives,ORCID,Identifiant de chercheur 0000-0001-9670-8588,https://orcid.org/0000-0001-9670-8588,anglais,
-dial,Sources de ces archives,DIAL (UCLouvain),"Dépôt institutionnel de l'UCLouvain : publications, exposés et posters",https://dial.uclouvain.be/,français,
-idref,Sources de ces archives,IdRef / SUDOC,Notice dans le catalogue des bibliothèques universitaires françaises (livres),https://www.idref.fr/096506385,français,
+sfar,Sociétés d'anesthésie,SFAR,"Société française d'anesthésie et de réanimation : congrès, recommandations, journées SFAR Jeunes Pédiatrique",https://sfar.org/,français,FALSE
+adarpef,Sociétés d'anesthésie,ADARPEF,Association des anesthésistes-réanimateurs pédiatriques d'expression française,https://www.adarpef.org/,français,FALSE
+espa,Sociétés d'anesthésie,ESPA,European Society for Paediatric Anaesthesiology,https://www.euroespa.com/,anglais,FALSE
+esaic,Sociétés d'anesthésie,ESAIC,"European Society of Anaesthesiology and Intensive Care : congrès Euroanaesthesia, recommandations",https://www.esaic.org/,anglais,FALSE
+sarb,Sociétés d'anesthésie,SARB,Society for Anesthesia and Resuscitation of Belgium,https://www.sarb.be/,anglais,FALSE
+bapa,Sociétés d'anesthésie,BAPA,Belgian Association for Paediatric Anaesthesia,https://www.bapanaesth.be/,anglais,FALSE
+spa,Sociétés d'anesthésie,Society for Pediatric Anesthesia,Société américaine d'anesthésie pédiatrique (série de podcasts « Ask the Expert » avec OpenAnesthesia),https://pedsanesthesia.org/,anglais,FALSE
+apa,Sociétés d'anesthésie,APA,Association of Paediatric Anaesthetists of Great Britain and Ireland,https://www.apagbi.org.uk/,anglais,FALSE
+sarnepi,Sociétés d'anesthésie,SARNePI,Società di Anestesia e Rianimazione Neonatale e Pediatrica Italiana,https://www.sarnepi.it/,italien,FALSE
+wfsa,Sociétés d'anesthésie,WFSA,World Federation of Societies of Anaesthesiologists : l'anesthésie dans le monde,https://wfsahq.org/,anglais,FALSE
+pan,Revues,Paediatric Anaesthesia,Revue internationale d'anesthésie pédiatrique (Wiley),https://onlinelibrary.wiley.com/journal/14609592,anglais,FALSE
+eja,Revues,European Journal of Anaesthesiology,Revue de l'ESAIC,https://journals.lww.com/ejanaesthesiology,anglais,FALSE
+bja,Revues,British Journal of Anaesthesia,,https://www.bjanaesthesia.org/,anglais,FALSE
+accpm,Revues,Anaesthesia Critical Care & Pain Medicine,Revue de la SFAR (anglais),https://www.sciencedirect.com/journal/anaesthesia-critical-care-and-pain-medicine,anglais,FALSE
+anrea,Revues,Anesthésie & Réanimation,Revue de la SFAR (français),https://www.sciencedirect.com/journal/anesthesie-and-reanimation,français,FALSE
+aab,Revues,Acta Anaesthesiologica Belgica,Revue de la SARB,http://www.actaanaesthesiologica.be/,anglais,FALSE
+anesthesiology,Revues,Anesthesiology,Revue de l'American Society of Anesthesiologists,https://pubs.asahq.org/anesthesiology,anglais,FALSE
+aa,Revues,Anesthesia & Analgesia,,https://journals.lww.com/anesthesia-analgesia,anglais,FALSE
+mrp,Maladies rares,Syndromes & maladies rares en pédiatrie : anesthésie,Base de données tenue avec Jean-Louis Scholtes (version française),https://sites.uclouvain.be/anesthweekly/MRP/,français,FALSE
+mrp-en,Maladies rares,Syndromes & rare diseases in pediatrics: anesthesia,La même base de données en anglais,https://sites.uclouvain.be/anesthweekly/MRP_ENG/,anglais,FALSE
+orphanet,Maladies rares,Orphanet,Portail des maladies rares et des médicaments orphelins,https://www.orpha.net/,français,FALSE
+orphananesthesia,Maladies rares,OrphanAnesthesia,Recommandations d'anesthésie pour les patients atteints de maladies rares,https://www.orphananesthesia.eu/,anglais,FALSE
+omim,Maladies rares,OMIM,Online Mendelian Inheritance in Man : catalogue des maladies génétiques,https://www.omim.org/,anglais,FALSE
+openanesthesia,Formation,OpenAnesthesia,Ressources de formation et podcasts en anesthésie,https://www.openanesthesia.org/,anglais,FALSE
+sfar-yt,Formation,SFAR sur YouTube,Conférences filmées des congrès et journées de la SFAR,https://www.youtube.com/@sfar_officiel,français,FALSE
+sarb-yt,Formation,SARB sur YouTube,Conférences filmées de la SARB,https://www.youtube.com/@SARBBelgium,français,FALSE
+esaic-academy,Formation,ESAIC Academy,Contenus de formation de l'ESAIC (en partie réservés aux membres),https://academy.esaic.org/,anglais,FALSE
+saintluc,Institutions,Cliniques universitaires Saint-Luc,"Bruxelles, hôpital universitaire de l'UCLouvain",https://www.saintluc.be/,français,FALSE
+uclouvain,Institutions,UCLouvain,Université catholique de Louvain,https://uclouvain.be/,français,FALSE
+chu-lille,Institutions,CHU de Lille,Hôpital Jeanne de Flandre,https://www.chu-lille.fr/,français,FALSE
+chaine-espoir,Humanitaire,La Chaîne de l'Espoir,"Organisation humanitaire de chirurgie, notamment pédiatrique",https://www.chainedelespoir.org/,français,FALSE
+pubmed,Sources de ces archives,PubMed,Ses articles indexés dans PubMed,https://pubmed.ncbi.nlm.nih.gov/?term=Veyckemans+F%5BAuthor%5D,anglais,FALSE
+openalex,Sources de ces archives,OpenAlex,Index bibliographique ouvert,https://openalex.org/authors/A5031410557,anglais,FALSE
+orcid,Sources de ces archives,ORCID,Identifiant de chercheur 0000-0001-9670-8588,https://orcid.org/0000-0001-9670-8588,anglais,FALSE
+dial,Sources de ces archives,DIAL (UCLouvain),"Dépôt institutionnel de l'UCLouvain : publications, exposés et posters",https://dial.uclouvain.be/,français,FALSE
+idref,Sources de ces archives,IdRef / SUDOC,Notice dans le catalogue des bibliothèques universitaires françaises (livres),https://www.idref.fr/096506385,français,FALSE
