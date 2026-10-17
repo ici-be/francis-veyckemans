@@ -25,6 +25,7 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
 - donnees/lieux.csv : position (ville, pays, latitude, longitude) de chaque lieu de conférence, pour les
   cartes ; un lieu nouveau est cherché dans OpenStreetMap (Nominatim). Les lignes existantes, éventuellement
   corrigées à la main, sont conservées ; un lieu introuvable est ajouté sans coordonnées, à compléter à la main ;
+- donnees/medias.csv : copie de l'onglet « Médias » (vidéos et podcasts, remplis à la main) ;
 - donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
   revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
   éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
@@ -60,6 +61,7 @@ COAUTEURS = RACINE / "donnees" / "coauteurs.csv"
 LECTURES = RACINE / "donnees" / "lectures.csv"
 CONFERENCES = RACINE / "donnees" / "conferences.csv"
 LIEUX = RACINE / "donnees" / "lieux.csv"
+MEDIAS = RACINE / "donnees" / "medias.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -770,6 +772,20 @@ def id_onglet_conferences():
     return m.group(1) if m else ""
 
 
+def id_onglet_medias():
+    m = re.search(r'medias:\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
+    return m.group(1) if m else ""
+
+
+def copie_medias(sheet_id):
+    """Copie de secours de l'onglet « Médias » (rempli à la main) dans donnees/medias.csv."""
+    gid = id_onglet_medias()
+    if sheet_id and gid:
+        lignes = lire_tableau(sheet_id, gid, ("id", "titre"))
+        if lignes:
+            ecrire_csv(lignes, MEDIAS, list(lignes[0].keys()))
+
+
 def id_tableau():
     """SHEET_ID lu dans config.js, pour n'avoir qu'un seul endroit où le changer."""
     m = re.search(r'tableau:\s*"([^"]*)"', (RACINE / "config.js").read_text(encoding="utf-8"))
@@ -922,6 +938,7 @@ def main():
                 print(f"  ignorée : {i}", file=sys.stderr)
         ecrire_csv(lire_tableau(sheet_id))  # copie de secours dans le dépôt
         conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
+        copie_medias(sheet_id)
         return
 
     toutes = existantes + nouvelles

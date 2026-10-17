@@ -36,7 +36,7 @@ jobs:
           ARCHIVES_CLE: ${{ secrets.ARCHIVES_CLE }}
       - name: Enregistrer les nouveautés
         run: |
-          git add donnees/publications.csv donnees/citations.csv donnees/coauteurs.csv donnees/lectures.csv donnees/conferences.csv donnees/lieux.csv
+          git add donnees/publications.csv donnees/citations.csv donnees/coauteurs.csv donnees/lectures.csv donnees/conferences.csv donnees/lieux.csv donnees/medias.csv
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
