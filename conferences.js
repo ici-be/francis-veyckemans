@@ -41,7 +41,7 @@
         .forEach((t) => $("#type").add(new Option(`${t} (${compte[t]})`, t)));
       const annees = toutes.map((c) => parseInt(c.date, 10)).filter(Boolean);
       if (annees.length)
-        $("#intro").textContent = `${pluriel(toutes.length, "intervention")} lors de congrès et de journées de formation, de ${Math.min(...annees)} à ${Math.max(...annees)}. La liste est encore incomplète.`;
+        $("#intro").textContent = `${pluriel(toutes.length, "intervention")}, de ${Math.min(...annees)} à ${Math.max(...annees)}. La liste est encore incomplète.`;
       afficher();
     })
     .catch((e) => {
