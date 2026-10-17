@@ -21,7 +21,7 @@
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("erreur " + r.status))))
       .then((texte) => {
         if (!/^id,/.test(texte)) throw new Error("onglet illisible");
-        $("#maj").textContent = "— en direct du tableau";
+        if ($("#maj")) $("#maj").textContent = "— en direct du tableau";
         return texte;
       })
       .catch(copie);

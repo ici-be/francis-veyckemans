@@ -308,7 +308,8 @@ td.revue i { color: var(--encre); font-style: italic; }
   box-shadow: 0 4px 14px rgba(0,0,0,.15);
 }
 
-.pied { margin-top: 40px; padding: 22px 0 40px; border-top: 1px solid var(--trait); color: var(--encre-3); font-size: 14px; }
+/* plus de pied de page : un peu d’air sous le contenu */
+main { padding-bottom: 56px; }
 
 /* téléphone : chaque publication devient une fiche */
 /* page Vidéos et podcasts */
