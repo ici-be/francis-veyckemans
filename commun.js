@@ -44,8 +44,11 @@ window.FV = (function () {
   function charger() {
     return Promise.all([telechargerPublications(), annexe("donnees/citations.csv"), annexe("donnees/coauteurs.csv")])
       .then(([publications, citations, coauteurs]) => {
-        const nbCitations = {};
-        lireCSV(citations).forEach((l) => (nbCitations[l.id] = parseInt(l.citations, 10)));
+        const nbCitations = {}, fichesOpenAlex = {};
+        lireCSV(citations).forEach((l) => {
+          nbCitations[l.id] = parseInt(l.citations, 10);
+          fichesOpenAlex[l.id] = l.openalex || "";
+        });
         const alias = {};
         lireCSV(coauteurs).forEach((l) => l.alias && l.nom && (alias[l.alias.trim()] = l.nom.trim()));
         const nomComplet = (n) => {
@@ -55,16 +58,17 @@ window.FV = (function () {
         return lireCSV(publications)
           .filter((p) => p.id || p.titre)
           .filter((p) => !oui(p.masquer))
-          .map((p) => preparer(p, nbCitations, nomComplet));
+          .map((p) => preparer(p, nbCitations, fichesOpenAlex, nomComplet));
       });
   }
 
-  function preparer(p, nbCitations, nomComplet) {
+  function preparer(p, nbCitations, fichesOpenAlex, nomComplet) {
     const auteurs = (p.auteurs || "").split(/\s*,\s*/).filter(Boolean);
     p._auteurs = auteurs;
     p._noms = [...new Set(auteurs.map(nomComplet))].filter((n) => n !== "-");  // « - » dans coauteurs.csv : pas une personne
     p._annee = parseInt(p.annee, 10) || 0;
     p._citations = Number.isFinite(nbCitations[p.id]) ? nbCitations[p.id] : null;
+    p._openalex = fichesOpenAlex[p.id] || "";  // « W123 » ou « W123|W456 » si l'article a plusieurs fiches OpenAlex
     p.type = p.type || "article";
     if (p.pdf_drive) p.lien_pdf = p.pdf_drive;  // PDF déposé dans le dossier Google Drive : prioritaire
     p._titre = estAvis(p) ? p.titre.replace(/^Faculty Opinions recommendation of\s*/i, "") : p.titre;
@@ -93,6 +97,13 @@ window.FV = (function () {
     if (p.pages) ref += (ref ? ":" : "p. ") + p.pages;
     if (ref) html += (html ? " " : "") + echapper(ref);
     return html;
+  }
+
+  // nombre de citations ; lien vers la liste des articles citants dans OpenAlex quand on connaît la fiche
+  function citationsHTML(p, texte) {
+    if (!p._openalex) return `<span title="${t("Citations selon OpenAlex")}">${texte}</span>`;
+    const url = `https://openalex.org/works?filter=cites:${encodeURIComponent(p._openalex)}`;
+    return `<a class="citants" href="${url}" target="_blank" rel="noopener" title="${t("Articles qui citent cette publication (OpenAlex)")}"><span>${texte}</span></a>`;
   }
 
   function liensHTML(p) {
@@ -202,5 +213,5 @@ window.FV = (function () {
     URL.revokeObjectURL(lien.href);
   }
 
-  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, famille, revueHTML, liensHTML, activerCiter, exporter };
+  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, famille, revueHTML, citationsHTML, liensHTML, activerCiter, exporter };
 })();

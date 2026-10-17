@@ -68,6 +68,7 @@ window.I18N = (function () {
     "Citations": "Citations",
     "Nombre de citations selon OpenAlex": "Number of citations according to OpenAlex",
     "Citations selon OpenAlex": "Citations according to OpenAlex",
+    "Articles qui citent cette publication (OpenAlex)": "Articles citing this publication (OpenAlex)",
     "{n} publication sur {total}": "{n} publication of {total}",
     "{n} publications sur {total}": "{n} publications of {total}",
     "année {a}": "year {a}",

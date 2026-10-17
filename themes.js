@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const { $, sansAccents, echapper, estAvis, pluriel, revueHTML, liensHTML } = FV;
+  const { $, sansAccents, echapper, estAvis, pluriel, revueHTML, citationsHTML, liensHTML } = FV;
   const { t } = I18N;
   let toutes = [];
 
@@ -33,7 +33,7 @@
       <div class="cite-ici">
         <div class="titre">${echapper(p.titre)}</div>
         <div class="auteurs">${echapper(p._auteurs.slice(0, 6).join(", "))}${p._auteurs.length > 6 ? ", et al." : ""}</div>
-        <div class="revue">${revueHTML(p)}${p._citations ? ` · ${pluriel(p._citations, "citation")}` : ""}</div>
+        <div class="revue">${revueHTML(p)}${p._citations ? ` · ${citationsHTML(p, pluriel(p._citations, "citation"))}` : ""}</div>
         ${liensHTML(p)}
       </div>
     </li>`;

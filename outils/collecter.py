@@ -16,7 +16,7 @@ ensuite une copie du tableau dans donnees/publications.csv (secours si Google es
 Sans tableau dans config.js, c'est donnees/publications.csv qui est complété directement.
 
 Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau :
-- donnees/citations.csv : nombre de citations de chaque publication (OpenAlex), réécrit à chaque fois ;
+- donnees/citations.csv : nombre de citations de chaque publication et ses identifiants OpenAlex, réécrit à chaque fois ;
 - donnees/coauteurs.csv : forme complète « Nom Prénom » des variantes de noms d'auteurs
   (« Pirotte T », « Thierry Pirotte » → « Pirotte Thierry »). Les lignes existantes, éventuellement
   corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées ;
@@ -272,6 +272,7 @@ def lire_openalex(w):
         "lien_pdf": oa.get("pdf_url") or "",
         "_page": loc.get("landing_page_url") or "",
         "_citations": w.get("cited_by_count"),
+        "_openalex": (w.get("id") or "").rsplit("/", 1)[-1],  # « W2741809807 »
         "_affiches": [a["author"].get("display_name") or "" for a in w.get("authorships", [])],
         "_source": "OpenAlex",
     }
@@ -470,15 +471,18 @@ def oui(v):
 # ---------------------------------------------------------------- citations et noms complets
 
 def ecrire_citations(paires):
-    """Nombre de citations OpenAlex par publication (le plus grand si l'article a plusieurs fiches OpenAlex)."""
-    compte = {}
+    """Nombre de citations OpenAlex par publication (le plus grand si l'article a plusieurs fiches OpenAlex),
+    et identifiants OpenAlex des fiches qui ont des citations : le site en fait le lien vers la liste des articles citants."""
+    compte, fiches = {}, {}
     for fiche, r in paires:
         if r.get("_citations") is not None and fiche.get("id"):
             compte[fiche["id"]] = max(compte.get(fiche["id"], 0), r["_citations"])
+            if r["_citations"] and r.get("_openalex"):
+                fiches.setdefault(fiche["id"], set()).add(r["_openalex"])
     with CITATIONS.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id", "citations"])
-        w.writerows(sorted(compte.items()))
+        w.writerow(["id", "citations", "openalex"])
+        w.writerows([i, n, "|".join(sorted(fiches.get(i, [])))] for i, n in sorted(compte.items()))
     print(f"Écrit : {CITATIONS.relative_to(RACINE)} ({len(compte)} lignes)", file=sys.stderr)
 
 

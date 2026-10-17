@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  const { $, sansAccents, echapper, estLui, estAvis, pluriel, famille, revueHTML, liensHTML } = FV;
+  const { $, sansAccents, echapper, estLui, estAvis, pluriel, famille, revueHTML, citationsHTML, liensHTML } = FV;
   const { t, valeur } = I18N;
   const champs = { recherche: $("#recherche"), type: $("#type"), pdf: $("#pdf") };
   const corps = $("#tableau tbody");
@@ -154,7 +154,7 @@
         </td>
         <td class="revue">${revueHTML(p)}</td>
         <td class="type"><span class="pastille ${famille(p.type)}">${echapper(valeur(p.type))}</span></td>
-        <td class="citations">${p._citations ? `<span title="${t("Citations selon OpenAlex")}">${p._citations}</span>` : ""}</td>
+        <td class="citations">${p._citations ? citationsHTML(p, p._citations) : ""}</td>
         <td class="liens-cell">${liensHTML(p)}</td>
       </tr>`).join("");
   }

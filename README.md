@@ -14,7 +14,7 @@ Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coa
 | `donnees/publications.csv` | copie de secours du tableau (mise à jour chaque lundi), utilisée si Google est injoignable |
 | `outils/collecter.py` | cherche les publications dans PubMed, OpenAlex, ORCID, et les livres à la BnF et au SUDOC, et les envoie au tableau |
 | `outils/tableau.gs` | script du tableau : reçoit les envois de `collecter.py` (à coller dans Apps Script) |
-| `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex), réécrit par chaque collecte |
+| `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex) et ses identifiants OpenAlex (le nombre affiché mène à la liste des articles citants), réécrit par chaque collecte |
 | `donnees/coauteurs.csv` | forme complète « Nom Prénom » des variantes de noms (`alias,nom`) : complété par la collecte, corrigeable à la main (une ligne corrigée n'est plus modifiée) ; `nom` = `-` retire de la page Coauteurs ce qui n'est pas une personne (pays, association…) |
 | `donnees/themes.csv` | les thèmes : nom, description (et leur version anglaise `theme_en`, `description_en`), mots cherchés dans les titres (séparés par `;`, sans accents ni majuscules) |
 | `carte.js`, `cartes/` | carte des lieux (Europe, Belgique, hors d'Europe) et ses fonds vectoriels (Natural Earth) |
