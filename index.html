@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Francis Veyckemans — Archives</title>
+  <title>Francis Veyckemans — Publications</title>
   <meta name="description" content="Archives des travaux de Francis Veyckemans en anesthésie pédiatrique : publications scientifiques.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +14,12 @@
 <body>
   <header class="entete">
     <div class="largeur">
-      <p class="surtitre">Anesthésie pédiatrique · archives</p>
-      <h1>Francis Veyckemans</h1>
+      <p class="nom"><a href="./">Francis Veyckemans</a> <span>Anesthésie pédiatrique · archives</span></p>
       <nav class="onglets" aria-label="Sections">
         <a href="./" aria-current="page">Publications</a>
+        <a href="themes.html">Thèmes</a>
+        <a href="lectures.html">Lectures commentées</a>
+        <a href="coauteurs.html">Coauteurs</a>
         <span class="bientot" title="Section en préparation">Conférences</span>
         <span class="bientot" title="Section en préparation">Missions</span>
       </nav>
@@ -25,20 +27,32 @@
   </header>
 
   <main class="largeur">
-    <section class="intro">
-      <p>
-        Les articles qu'il a signés ou cosignés, rassemblés au fil des années.
-        La liste a été constituée à partir de PubMed, OpenAlex et ORCID.
-      </p>
-    </section>
+    <h1 class="cache">Publications</h1>
 
-    <section class="annees" aria-labelledby="titre-annees">
-      <div class="annees-tete">
-        <h2 id="titre-annees">Publications par année</h2>
-        <button type="button" id="annee-effacer" class="lien-bouton" hidden>toutes les années</button>
+    <section class="cadre annees" aria-labelledby="titre-annees">
+      <h2 id="titre-annees">Publications par année</h2>
+      <div class="periodes-cadre">
+        <span class="periodes-titre">Quatre temps</span>
+        <div id="periodes" class="periodes" hidden></div>
       </div>
       <div id="graphique" class="graphique" role="img" aria-label="Nombre de publications par année"></div>
-      <p class="aide">Cliquer sur une barre pour n'afficher que cette année.</p>
+      <p class="aide">Cliquer sur une barre ou une période pour filtrer la liste.</p>
+    </section>
+
+    <section id="reperes" class="reperes" aria-labelledby="titre-reperes">
+      <h2 id="titre-reperes">En un coup d'œil</h2>
+      <div class="reperes-grille">
+        <div class="cadre">
+          <h3>Revues les plus fréquentes</h3>
+          <ul id="reperes-revues" class="barres-liste"></ul>
+        </div>
+        <div class="cadre">
+          <h3>Langues</h3>
+          <ul id="reperes-langues" class="barres-liste"></ul>
+          <h3>Accès libre</h3>
+          <p id="reperes-libre"></p>
+        </div>
+      </div>
     </section>
 
     <section class="filtres" aria-label="Filtres">
@@ -50,18 +64,18 @@
         <span>Type</span>
         <select id="type"><option value="">Tous les types</option></select>
       </label>
-      <label class="champ">
-        <span>Position</span>
-        <select id="position">
-          <option value="">Toutes</option>
-          <option value="premier">Premier auteur</option>
-          <option value="dernier">Dernier auteur</option>
-        </select>
-      </label>
       <label class="case"><input type="checkbox" id="pdf"> avec PDF librement accessible</label>
     </section>
 
-    <p class="compte" id="compte" aria-live="polite">Chargement…</p>
+    <div class="compte-ligne">
+      <p class="compte" id="compte" aria-live="polite">Chargement…</p>
+      <div id="choix" class="choix"></div>
+      <div id="exporter" class="exporter" hidden>
+        Exporter la sélection :
+        <button type="button" class="lien-bouton" data-format="BibTeX">BibTeX</button>
+        <button type="button" class="lien-bouton" data-format="RIS">RIS</button>
+      </div>
+    </div>
 
     <div class="tableau-cadre">
       <table class="tableau" id="tableau">
@@ -71,6 +85,7 @@
             <th scope="col" data-tri="titre"><button type="button">Titre et auteurs</button></th>
             <th scope="col" data-tri="revue" class="col-revue"><button type="button">Revue</button></th>
             <th scope="col" data-tri="type" class="col-type"><button type="button">Type</button></th>
+            <th scope="col" data-tri="citations" class="col-citations"><button type="button" title="Nombre de citations selon OpenAlex">Citations</button></th>
             <th scope="col" class="col-liens">Liens</th>
           </tr>
         </thead>
@@ -81,11 +96,7 @@
 
   <footer class="pied">
     <div class="largeur">
-      <p>
-        <a href="donnees/publications.csv" download>Télécharger la liste (CSV)</a>
-        · <a id="lien-corriger" href="#">Proposer une correction</a>
-        · Données : PubMed, OpenAlex, ORCID <span id="maj"></span>
-      </p>
+      <p>Données : PubMed, OpenAlex, ORCID — mise à jour <span id="maj">—</span></p>
     </div>
   </footer>
 
@@ -93,6 +104,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="config.js"></script>
+  <script src="commun.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Francis Veyckemans — Lectures commentées</title>
+  <meta name="description" content="Articles recommandés et commentés par Francis Veyckemans pour Faculty Opinions (F1000).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d6b70'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' fill='white' text-anchor='middle'%3EFV%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="entete">
+    <div class="largeur">
+      <p class="nom"><a href="./">Francis Veyckemans</a> <span>Anesthésie pédiatrique · archives</span></p>
+      <nav class="onglets" aria-label="Sections">
+        <a href="./">Publications</a>
+        <a href="themes.html">Thèmes</a>
+        <a href="lectures.html" aria-current="page">Lectures commentées</a>
+        <a href="coauteurs.html">Coauteurs</a>
+        <span class="bientot" title="Section en préparation">Conférences</span>
+        <span class="bientot" title="Section en préparation">Missions</span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="largeur page">
+    <h1>Lectures commentées</h1>
+    <p class="intro" id="intro">Articles recommandés et commentés pour Faculty Opinions (F1000).</p>
+    <label class="champ recherche seul">
+      <span>Rechercher</span>
+      <input type="search" id="recherche" placeholder="mot du titre…" autocomplete="off">
+    </label>
+    <p class="compte" id="compte" aria-live="polite">Chargement…</p>
+    <div id="lectures"></div>
+  </main>
+
+  <footer class="pied">
+    <div class="largeur">
+      <p>Données : PubMed, OpenAlex, ORCID — mise à jour <span id="maj">—</span></p>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="config.js"></script>
+  <script src="commun.js"></script>
+  <script src="lectures.js"></script>
+</body>
+</html>

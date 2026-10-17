@@ -1,23 +1,27 @@
 # Archives de Francis Veyckemans
 
 Site GitHub Pages qui rassemble les travaux de Francis Veyckemans en anesthésie pédiatrique.
-Première section : la liste de ses publications scientifiques.
+Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coauteurs.
 
 ## Organisation
 
 | Fichier | Rôle |
 |---|---|
-| `index.html`, `style.css`, `app.js` | la page (aucune compilation nécessaire) |
+| `index.html`, `themes.html`, `lectures.html`, `coauteurs.html` | les pages (aucune compilation nécessaire) ; chacune a son script `.js` du même nom (`app.js` pour la première) |
+| `commun.js`, `style.css` | chargement des données, boutons « Citer » et export BibTeX / RIS ; mise en page |
 | **tableau Google Sheets** | **la liste des publications** : c'est là qu'on corrige ; le site le lit en direct |
 | `donnees/publications.csv` | copie de secours du tableau (mise à jour chaque lundi), utilisée si Google est injoignable |
 | `outils/collecter.py` | cherche les publications dans PubMed, OpenAlex et ORCID et les envoie au tableau |
 | `outils/tableau.gs` | script du tableau : reçoit les envois de `collecter.py` (à coller dans Apps Script) |
-| `config.js` | identifiant du tableau et nom du dépôt GitHub |
+| `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex), réécrit par chaque collecte |
+| `donnees/coauteurs.csv` | forme complète « Nom Prénom » des variantes de noms (`alias,nom`) : complété par la collecte, corrigeable à la main (une ligne corrigée n'est plus modifiée) |
+| `donnees/themes.csv` | les thèmes : nom, description, mots cherchés dans les titres (séparés par `;`, sans accents ni majuscules) |
+| `config.js` | identifiant du tableau ; les quatre périodes affichées au-dessus du graphique |
 | `.github/workflows/publier.yml` | publie le site à chaque push, et lance la collecte chaque lundi |
 
 ## Corriger ou compléter la liste
 
-Ouvrir le tableau (lien « Tableau des données » en bas du site). Une ligne = une publication.
+Ouvrir le tableau : https://docs.google.com/spreadsheets/d/17bUrP_chpuZXRbxyL96DIlUFHj47GjZQdmftGOaZ0JU/edit (identifiant dans `config.js`). Une ligne = une publication.
 Les corrections apparaissent sur le site dès qu'on recharge la page.
 Pour permettre à quelqu'un de corriger : *Partager* → l'inviter comme **Éditeur**.
 

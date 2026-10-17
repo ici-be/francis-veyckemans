@@ -15,14 +15,22 @@ nouveautés et les envoie au script du tableau (outils/tableau.gs), qui les écr
 ensuite une copie du tableau dans donnees/publications.csv (secours si Google est injoignable).
 Sans tableau dans config.js, c'est donnees/publications.csv qui est complété directement.
 
+Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau :
+- donnees/citations.csv : nombre de citations de chaque publication (OpenAlex), réécrit à chaque fois ;
+- donnees/coauteurs.csv : forme complète « Nom Prénom » des variantes de noms d'auteurs
+  (« Pirotte T », « Thierry Pirotte » → « Pirotte Thierry »). Les lignes existantes, éventuellement
+  corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées.
+
 Usage :
   python3 outils/collecter.py                       collecte et envoi au tableau
   python3 outils/collecter.py --simulation          affiche ce qui changerait, sans rien écrire
+  python3 outils/collecter.py annexes               met à jour seulement citations.csv et coauteurs.csv
   python3 outils/collecter.py copie                 copie le tableau dans donnees/publications.csv
   python3 outils/collecter.py configurer URL CLÉ    enregistre l'accès au script du tableau
                                                     (dans ~/.config/archives-fv/, hors du dépôt)
 Sur GitHub, l'URL et la clé viennent des secrets ARCHIVES_URL et ARCHIVES_CLE.
 """
+import collections
 import csv
 import datetime
 import json
@@ -38,6 +46,8 @@ import requests
 
 RACINE = Path(__file__).resolve().parent.parent
 FICHIER = RACINE / "donnees" / "publications.csv"
+CITATIONS = RACINE / "donnees" / "citations.csv"
+COAUTEURS = RACINE / "donnees" / "coauteurs.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -135,11 +145,12 @@ def pubmed():
 
 def lire_pubmed(art):
     txt = lambda chemin: "".join(art.find(chemin).itertext()) if art.find(chemin) is not None else ""
-    auteurs = []
+    auteurs, noms = [], []
     for a in art.iterfind(".//AuthorList/Author"):
         nom, ini = a.findtext("LastName"), a.findtext("Initials")
         if nom:
             auteurs.append(f"{nom} {ini or ''}".strip())
+            noms.append((nom, a.findtext("ForeName") or ""))
         elif a.findtext("CollectiveName"):
             auteurs.append(a.findtext("CollectiveName"))
     annee = art.findtext(".//JournalIssue/PubDate/Year") or ""
@@ -163,6 +174,7 @@ def lire_pubmed(art):
         "doi": norm_doi(ids.get("doi")),
         "pmid": ids.get("pubmed") or art.findtext(".//PMID") or "",
         "pmcid": ids.get("pmc") or "",
+        "_noms": noms,
         "_source": "PubMed",
     }
 
@@ -241,6 +253,8 @@ def lire_openalex(w):
         "pmcid": pmcid,
         "lien_pdf": oa.get("pdf_url") or "",
         "_page": loc.get("landing_page_url") or "",
+        "_citations": w.get("cited_by_count"),
+        "_affiches": [a["author"].get("display_name") or "" for a in w.get("authorships", [])],
         "_source": "OpenAlex",
     }
 
@@ -338,6 +352,88 @@ def oui(v):
     return (v or "").strip().lower() in ("oui", "x", "1", "true", "vrai")
 
 
+# ---------------------------------------------------------------- citations et noms complets
+
+def ecrire_citations(paires):
+    """Nombre de citations OpenAlex par publication (le plus grand si l'article a plusieurs fiches OpenAlex)."""
+    compte = {}
+    for fiche, r in paires:
+        if r.get("_citations") is not None and fiche.get("id"):
+            compte[fiche["id"]] = max(compte.get(fiche["id"], 0), r["_citations"])
+    with CITATIONS.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "citations"])
+        w.writerows(sorted(compte.items()))
+    print(f"Écrit : {CITATIONS.relative_to(RACINE)} ({len(compte)} lignes)", file=sys.stderr)
+
+
+def simple(texte):
+    return unicodedata.normalize("NFKD", texte or "").encode("ascii", "ignore").decode().lower().strip()
+
+
+INITIALES = re.compile(r"^(.*\S)\s+([A-Z]{1,4})$")  # « Pirotte T », « de Ville de Goyet J »
+COLLECTIF = re.compile(r"group|network|collaborat|investigator|consortium|society|committee|team|study", re.I)
+
+
+def prenom_complet(prenom):
+    return any(len(m) >= 2 and m != m.upper() for m in re.split(r"[\s.-]+", prenom or ""))
+
+
+def ecrire_coauteurs(fiches, trouvees):
+    """Associe chaque variante de nom à « Nom Prénom », d'après les prénoms de PubMed et d'OpenAlex.
+
+    Deux variantes désignent la même personne si elles ont le même nom de famille et la même
+    initiale de prénom (« Pirotte T » = « Thierry Pirotte »). Les homonymes éventuels se corrigent
+    à la main dans coauteurs.csv."""
+    familles = {simple(nom) for r in trouvees for nom, _ in r.get("_noms", [])}
+
+    def cle(brut):
+        m = INITIALES.match(brut)
+        if m:
+            return simple(m.group(1)), m.group(2)[0].lower()
+        b = simple(brut)
+        nom = max((f for f in familles if b.endswith(" " + f)), key=len, default=b.rsplit(" ", 1)[-1])
+        return nom, b[:1]
+
+    complets = {}  # clé -> Counter des « Nom Prénom »
+    for r in trouvees:
+        for nom, prenom in r.get("_noms", []):
+            if prenom_complet(prenom):
+                complets.setdefault((simple(nom), simple(prenom)[:1]), collections.Counter())[f"{nom} {prenom}"] += 1
+        for affiche in r.get("_affiches", []):
+            mots = affiche.split()
+            nom = cle(affiche)[0]
+            n = len(nom.split())
+            if nom in familles and len(mots) > n and prenom_complet(" ".join(mots[:-n])):
+                complets.setdefault(cle(affiche), collections.Counter())[" ".join(mots[-n:] + mots[:-n])] += 1
+
+    variantes = collections.Counter(a.strip() for f in fiches for a in (f.get("auteurs") or "").split(",") if a.strip())
+    groupes = {}
+    for brut in variantes:
+        if not COLLECTIF.search(brut) and len(brut.split()) <= 5:
+            groupes.setdefault(cle(brut), []).append(brut)
+
+    alias = {}
+    if COAUTEURS.exists():
+        with COAUTEURS.open(newline="", encoding="utf-8") as f:
+            alias = {l["alias"]: l["nom"] for l in csv.DictReader(f) if l.get("alias")}
+    ajoutes = 0
+    for k, bruts in groupes.items():
+        if complets.get(k):
+            forme = complets[k].most_common(1)[0][0]
+        else:  # pas de prénom connu : la variante « Nom I » la plus fréquente
+            forme = max(bruts, key=lambda b: (bool(INITIALES.match(b)), variantes[b]))
+        for b in bruts:
+            if b != forme and b not in alias:
+                alias[b] = forme
+                ajoutes += 1
+    with COAUTEURS.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["alias", "nom"])
+        w.writerows(sorted(alias.items(), key=lambda a: (simple(a[1]), simple(a[0]))))
+    print(f"Écrit : {COAUTEURS.relative_to(RACINE)} ({len(alias)} lignes, {ajoutes} nouvelle(s))", file=sys.stderr)
+
+
 # ---------------------------------------------------------------- tableau Google Sheets
 
 CONFIG_LOCALE = Path.home() / ".config" / "archives-fv" / "config.json"
@@ -406,8 +502,9 @@ def main():
         return
 
     simulation = "--simulation" in args
+    annexes = args[:1] == ["annexes"]
     if sheet_id:
-        url, cle = (None, None) if simulation else acces_script()
+        url, cle = (None, None) if simulation or annexes else acces_script()
         existantes = lire_tableau(sheet_id)
         print(f"Tableau : {len(existantes)} lignes", file=sys.stderr)
     else:
@@ -423,7 +520,7 @@ def main():
     # PubMed d'abord : ses métadonnées sont les plus soignées pour la médecine
     trouvees = pubmed() + openalex() + orcid()
     aujourdhui = datetime.date.today().isoformat()
-    nouvelles, modifiees = [], {}
+    nouvelles, modifiees, paires = [], {}, []
     for r in trouvees:
         liens(r)
         fiche = index.trouver(r)
@@ -437,6 +534,7 @@ def main():
                 fiche["notes"] = "masqué automatiquement (erratum)"
             index.ajouter(fiche)
             nouvelles.append(fiche)
+        paires.append((fiche, r))
         if oui(fiche.get("verrouille")):
             continue
         remplies = completer(fiche, r)
@@ -462,6 +560,11 @@ def main():
     if simulation:
         for f in nouvelles:
             print(f"  nouvelle : {f['annee']} {f['titre'][:90]}", file=sys.stderr)
+        return
+
+    ecrire_citations(paires)
+    ecrire_coauteurs(index.fiches, trouvees)
+    if annexes:
         return
 
     if sheet_id:

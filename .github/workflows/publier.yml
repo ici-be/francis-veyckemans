@@ -36,11 +36,11 @@ jobs:
           ARCHIVES_CLE: ${{ secrets.ARCHIVES_CLE }}
       - name: Enregistrer les nouveautés
         run: |
-          git add donnees/publications.csv
+          git add donnees/publications.csv donnees/citations.csv donnees/coauteurs.csv
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Publications : copie du tableau"
+            git commit -m "Publications : copie du tableau, citations, coauteurs"
             git pull --rebase origin main
             git push origin HEAD:main
           fi

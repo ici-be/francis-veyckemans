@@ -18,6 +18,8 @@
   --p-cas: #f6e3e6;       --p-cas-t: #84303f;
   --p-livre: #e6f1e1;     --p-livre-t: #35612a;
   --p-autre: #ece9f3;     --p-autre-t: #4d4470;
+  /* barres du graphique, une couleur par période */
+  --per0: #4f9a9c; --per1: #d08a3e; --per2: #5f86bd; --per3: #c0606f;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -28,6 +30,7 @@
     --p-article: #1f3637; --p-article-t: #a6dcdc; --p-revue: #1f2b3d; --p-revue-t: #a9c4ea;
     --p-lettre: #3a2d1a; --p-lettre-t: #ebc58f; --p-cas: #3b2328; --p-cas-t: #eeb0bb;
     --p-livre: #24331f; --p-livre-t: #b5d9a6; --p-autre: #2b2838; --p-autre-t: #c6bdea;
+    --per0: #4fa3a5; --per1: #c98a45; --per2: #6d93c9; --per3: #c46d7b;
     color-scheme: dark;
   }
 }
@@ -38,6 +41,7 @@
   --p-article: #1f3637; --p-article-t: #a6dcdc; --p-revue: #1f2b3d; --p-revue-t: #a9c4ea;
   --p-lettre: #3a2d1a; --p-lettre-t: #ebc58f; --p-cas: #3b2328; --p-cas-t: #eeb0bb;
   --p-livre: #24331f; --p-livre-t: #b5d9a6; --p-autre: #2b2838; --p-autre-t: #c6bdea;
+  --per0: #4fa3a5; --per1: #c98a45; --per2: #6d93c9; --per3: #c46d7b;
   color-scheme: dark;
 }
 
@@ -58,25 +62,28 @@ a:hover { color: var(--chaud); }
   background: var(--surface);
   border-bottom: 1px solid var(--trait);
   border-top: 4px solid var(--accent);
-  padding: 28px 0 0;
+  padding: 16px 0 0;
 }
-.surtitre {
-  margin: 0;
-  color: var(--chaud);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+.nom {
+  margin: 0 0 6px;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px;
 }
+.nom a {
+  color: var(--encre); text-decoration: none; white-space: nowrap;
+  font: 600 clamp(20px, 4vw, 24px)/1.2 "Source Serif 4", Georgia, serif;
+}
+.nom span { color: var(--encre-3); font-size: 14px; }
 h1 {
-  margin: 4px 0 18px;
-  font: 600 clamp(28px, 5vw, 40px)/1.15 "Source Serif 4", Georgia, serif;
+  margin: 28px 0 8px;
+  font: 600 26px/1.2 "Source Serif 4", Georgia, serif;
 }
 h2 {
   margin: 0;
   font: 600 18px/1.3 "Source Serif 4", Georgia, serif;
 }
-.onglets { display: flex; gap: 22px; flex-wrap: wrap; }
+h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--encre-2); }
+.cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.onglets { display: flex; gap: 4px 22px; flex-wrap: wrap; }
 .onglets a, .onglets span {
   padding: 8px 0 10px;
   font-weight: 600;
@@ -84,26 +91,43 @@ h2 {
   border-bottom: 3px solid transparent;
 }
 .onglets a[aria-current="page"] { color: var(--encre); border-color: var(--accent); }
+.onglets a:not([aria-current]) { color: var(--encre-2); font-weight: 400; }
+.onglets a:not([aria-current]):hover { color: var(--accent); }
 .onglets .bientot { color: var(--encre-3); font-weight: 400; cursor: default; }
 
-.intro { max-width: 720px; margin: 28px 0 8px; color: var(--encre-2); }
-
-/* graphique par année */
-.annees {
-  margin: 24px 0;
-  padding: 18px 18px 10px;
+.intro { max-width: 720px; margin: 0 0 20px; color: var(--encre-2); }
+.cadre {
   background: var(--surface);
   border: 1px solid var(--trait);
   border-radius: 10px;
 }
-.annees-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+
+/* graphique par année et périodes */
+.annees { margin: 24px 0; padding: 18px 18px 10px; }
+.periodes-cadre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.periodes-titre { font-size: 13px; font-weight: 600; color: var(--encre-3); }
+.periodes { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.periode {
+  flex: 1 1 160px; text-align: left; cursor: pointer;
+  border: 2px solid transparent; border-radius: 7px; padding: 6px 10px;
+  font: inherit; font-size: 13px; line-height: 1.35;
+}
+.periode b { display: block; font-variant-numeric: tabular-nums; }
+.periode.p0 { background: var(--p-article); color: var(--p-article-t); }
+.periode.p1 { background: var(--p-lettre); color: var(--p-lettre-t); }
+.periode.p2 { background: var(--p-revue); color: var(--p-revue-t); }
+.periode.p3 { background: var(--p-cas); color: var(--p-cas-t); }
+.periode[aria-pressed="true"] { border-color: currentColor; }
 .graphique { margin-top: 12px; }
 .graphique svg { display: block; width: 100%; height: auto; overflow: visible; }
 .graphique .barre { fill: var(--barre); cursor: pointer; }
-.graphique .barre.active { fill: var(--barre-active); }
+.graphique .barre.p0 { fill: var(--per0); }
+.graphique .barre.p1 { fill: var(--per1); }
+.graphique .barre.p2 { fill: var(--per2); }
+.graphique .barre.p3 { fill: var(--per3); }
 .graphique.filtre .barre:not(.active) { opacity: .35; }
 .graphique .zone { fill: transparent; cursor: pointer; }
-.graphique .zone:hover + .barre { fill: var(--barre-active); }
+.graphique .zone:hover + .barre { opacity: 1; filter: brightness(.85); }
 .graphique .axe { fill: var(--encre-3); font-size: 11px; }
 .graphique .grille { stroke: var(--trait); stroke-width: 1; }
 .aide { margin: 6px 0 0; color: var(--encre-3); font-size: 13px; }
@@ -111,6 +135,29 @@ h2 {
   background: none; border: 0; padding: 0; color: var(--accent);
   font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer;
 }
+
+/* en un coup d'œil */
+.reperes { margin: 0 0 24px; }
+.reperes-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 12px; }
+.reperes .cadre { padding: 16px 18px; }
+.reperes .cadre h3:not(:first-child) { margin-top: 18px; }
+.reperes p { margin: 0; color: var(--encre-2); font-size: 14px; }
+.reperes p b { font: 600 20px "Source Serif 4", Georgia, serif; color: var(--encre); }
+.barres-liste { list-style: none; margin: 0; padding: 0; }
+.barres-liste li, .repere-revue {
+  display: grid; grid-template-columns: minmax(0, 1fr) 110px 32px; gap: 10px; align-items: center;
+  min-height: 30px; font-size: 14px;
+}
+#reperes-revues li { display: block; }
+.repere-revue {
+  width: 100%; background: none; border: 0; padding: 0 4px; margin: 0 -4px; border-radius: 5px;
+  font: inherit; font-size: 14px; color: var(--encre); text-align: left; cursor: pointer;
+}
+.repere-revue:hover { background: var(--ligne-survol); }
+.repere-revue i { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jauge { display: block; height: 8px; border-radius: 4px; background: var(--ligne-survol); overflow: hidden; }
+.jauge span { display: block; height: 100%; background: var(--barre); border-radius: 4px; }
+.nombre { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); }
 
 /* filtres */
 .filtres {
@@ -134,6 +181,16 @@ h2 {
 .case { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--encre-2); min-height: 40px; }
 .case input { accent-color: var(--accent); width: 16px; height: 16px; }
 .compte { color: var(--encre-3); font-size: 14px; margin: 8px 0 10px; }
+.compte-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0 10px; }
+.compte-ligne .compte { margin: 0; }
+.choix { display: flex; flex-wrap: wrap; gap: 6px; }
+.etiquette {
+  border: 1px solid var(--accent); background: var(--accent-clair); color: var(--encre);
+  border-radius: 999px; padding: 2px 10px; min-height: 28px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.etiquette span { color: var(--accent); font-weight: 600; margin-left: 2px; }
+.exporter { margin-left: auto; color: var(--encre-3); font-size: 14px; }
+.exporter .lien-bouton { margin-left: 6px; }
 
 /* tableau */
 .tableau-cadre {
@@ -155,7 +212,7 @@ h2 {
 .tableau th button {
   display: block; width: 100%; text-align: left;
   background: none; border: 0; padding: 12px 14px;
-  font: inherit; font-weight: 600; color: inherit; cursor: pointer;
+  font: inherit; font-weight: 600; color: inherit; cursor: pointer; white-space: nowrap;
 }
 .tableau th.col-liens { padding: 12px 14px; font-weight: 600; }
 .tableau th button::after { content: " ↕"; color: var(--trait); }
@@ -168,10 +225,11 @@ h2 {
 .col-revue { width: 22%; }
 .col-type { width: 140px; }
 .col-liens { width: 150px; }
+.col-citations { width: 92px; }
+td.citations { text-align: right; font-variant-numeric: tabular-nums; color: var(--encre-2); font-size: 14px; }
 td.annee { font-variant-numeric: tabular-nums; color: var(--encre-2); font-weight: 600; }
 .titre { font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.4; }
 .auteurs { margin-top: 3px; color: var(--encre-2); font-size: 14px; }
-.auteurs b { color: var(--encre); font-weight: 600; }
 .auteurs .plus { color: var(--accent); cursor: pointer; background: none; border: 0; padding: 0; font: inherit; text-decoration: underline; }
 .note { margin-top: 4px; font-size: 13px; color: var(--chaud); }
 td.revue { font-size: 14px; color: var(--encre-2); }
@@ -191,15 +249,74 @@ td.revue i { color: var(--encre); font-style: italic; }
 .pastille.cas { background: var(--p-cas); color: var(--p-cas-t); }
 .pastille.livre { background: var(--p-livre); color: var(--p-livre-t); }
 .liens { display: flex; flex-wrap: wrap; gap: 6px; }
-.liens a {
-  font-size: 12px; font-weight: 600; text-decoration: none;
-  padding: 3px 8px; border-radius: 6px;
+.liens a, .liens .citer {
+  font: inherit; font-size: 12px; font-weight: 600; text-decoration: none; line-height: 1.5;
+  padding: 3px 8px; border-radius: 6px; background: none; cursor: pointer;
   border: 1px solid var(--trait); color: var(--encre-2);
 }
-.liens a:hover { border-color: var(--accent); color: var(--accent); }
+.liens a:hover, .liens .citer:hover, .liens .citer[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
 .liens a.pdf { background: var(--chaud); border-color: var(--chaud); color: #fff; }
 .liens a.pdf:hover { filter: brightness(1.08); color: #fff; }
 .vide { padding: 32px 14px; text-align: center; color: var(--encre-3); }
+
+/* panneau « Citer » */
+.citation {
+  margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+  background: var(--fond); border: 1px solid var(--trait);
+}
+.citation-tete { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.citation-tete button {
+  font: inherit; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--trait); background: var(--surface); color: var(--encre-2);
+}
+.citation-tete .format[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-clair); color: var(--encre); }
+.citation-tete .copier { margin-left: auto; background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.citation pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word;
+  font: 13px/1.5 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--encre);
+}
+
+/* pages Thèmes, Lectures commentées, Coauteurs */
+.sommaire { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.sommaire a {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--trait); background: var(--surface);
+  text-decoration: none; color: var(--encre); font-size: 14px;
+}
+.sommaire a span { color: var(--encre-3); font-variant-numeric: tabular-nums; }
+.sommaire a:hover { border-color: var(--accent); color: var(--accent); }
+.theme { margin-bottom: 12px; scroll-margin-top: 16px; }
+.theme summary { list-style: none; cursor: pointer; padding: 16px 18px 16px 44px; position: relative; }
+.theme summary::-webkit-details-marker { display: none; }
+.theme summary::before {
+  content: ""; position: absolute; left: 20px; top: 24px; width: 8px; height: 8px;
+  border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); transition: transform .15s;
+}
+.theme[open] summary::before { transform: rotate(45deg); }
+.theme summary h2 { display: inline; }
+.theme-compte { margin-left: 10px; color: var(--encre-3); font-size: 14px; }
+.theme summary p { margin: 4px 0 0; color: var(--encre-2); font-size: 15px; }
+.fiches { list-style: none; margin: 0; padding: 0 18px 8px; }
+.fiche { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--trait); }
+.fiche-annee { font-weight: 600; color: var(--encre-2); font-variant-numeric: tabular-nums; }
+.fiche .revue { margin: 3px 0 8px; font-size: 14px; color: var(--encre-2); }
+.fiche .revue i { color: var(--encre); }
+
+.champ.seul { max-width: 420px; margin-bottom: 8px; }
+.lectures-annee { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--trait); }
+.lectures-annee h2 { font-variant-numeric: tabular-nums; color: var(--encre-2); }
+.lectures-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lectures-liste li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.lectures-liste .titre { flex: 1 1 400px; }
+.lectures-liste a { font-size: 14px; font-weight: 600; white-space: nowrap; }
+
+.tableau.coauteurs td { padding: 9px 14px; }
+.col-n { width: 130px; }
+.col-periode { width: 45%; }
+.tableau.coauteurs td.nombre { font-weight: 600; }
+.periode-cell { display: flex; align-items: center; gap: 12px; }
+.ligne-vie { position: relative; flex: 1; height: 10px; border-radius: 5px; background: var(--ligne-survol); }
+.ligne-vie span { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--barre); }
+.periode-texte { width: 92px; flex: none; font-size: 13px; color: var(--encre-2); font-variant-numeric: tabular-nums; }
 
 .infobulle {
   position: fixed; z-index: 10; pointer-events: none;
@@ -219,5 +336,13 @@ td.revue i { color: var(--encre); font-style: italic; }
   td.annee { grid-column: 1; grid-row: 1; }
   td.type { grid-column: 2; grid-row: 1; }
   td.titre-cell, td.revue, td.liens-cell { grid-column: 1 / -1; }
+  td.citations { grid-column: 1 / -1; text-align: left; }
+  td.citations span::after { content: " citations"; }
+  .tableau.coauteurs tr { grid-template-columns: 1fr auto; }
+  .tableau.coauteurs td { padding: 0; }
+  .tableau.coauteurs td.periode-cell { grid-column: 1 / -1; }
+  .exporter { margin-left: 0; }
+  .periodes-titre { flex-basis: 100%; }
+  .lectures-annee { grid-template-columns: 1fr; gap: 6px; }
   .champ.recherche { flex-basis: 100%; }
 }
