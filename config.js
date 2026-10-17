@@ -5,6 +5,8 @@ window.CONFIG = {
   tableau: "17bUrP_chpuZXRbxyL96DIlUFHj47GjZQdmftGOaZ0JU",
   // numéro (gid) de l'onglet « Conférences » du même tableau (vide : le site lit donnees/conferences.csv)
   conferences: "1224804362",
+  // numéro (gid) de l'onglet « Médias » (vidéos et podcasts) ; vide : le site lit donnees/medias.csv
+  medias: "",
   // types de l'onglet « Conférences » à ne pas afficher sur le site (ils restent dans le tableau)
   typesConferencesCaches: ["poster"],
   // périodes affichées au-dessus du graphique (« a » vide : jusqu'à aujourd'hui)

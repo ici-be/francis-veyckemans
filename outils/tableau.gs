@@ -472,3 +472,20 @@ function installerConferences() {
   }
   Logger.log('Onglet « ' + ONGLET_CONFERENCES + ' » : gid = ' + feuille.getSheetId() + ' (à mettre dans config.js, ligne conferences:)');
 }
+
+// ---------------------------------------------------------------- onglet des vidéos et podcasts
+
+/** Crée l'onglet « Médias », rempli avec donnees/medias.csv du site, et affiche son gid pour config.js. */
+function installerMedias() {
+  const classeur = SpreadsheetApp.getActive();
+  let feuille = classeur.getSheetByName('Médias');
+  if (!feuille) {
+    const lignes = Utilities.parseCsv(UrlFetchApp.fetch(LISTE_DU_SITE.replace('publications.csv', 'medias.csv')).getContentText('UTF-8'));
+    feuille = classeur.insertSheet('Médias');
+    feuille.getRange(1, 1, feuille.getMaxRows(), lignes[0].length).setNumberFormat('@');
+    feuille.getRange(1, 1, lignes.length, lignes[0].length).setValues(lignes);
+    mettreEnForme(feuille, lignes[0], 2, lignes.length - 1);
+    protegerEntete(feuille);
+  }
+  Logger.log('Onglet « Médias » : gid = ' + feuille.getSheetId() + ' (à mettre dans config.js, ligne medias:)');
+}

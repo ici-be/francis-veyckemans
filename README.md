@@ -94,6 +94,15 @@ Installation (une seule fois) : recoller `outils/tableau.gs` dans Apps Script, e
 faire *Déployer → Gérer les déploiements → ✎ → Nouvelle version*, puis mettre le numéro (gid) affiché dans le
 journal dans `config.js`, ligne `conferences:`. Tant que ce numéro est vide, la page lit `donnees/conferences.csv`.
 
+## Vidéos et podcasts
+
+La page lit `donnees/medias.csv` (ou l'onglet **« Médias »** du tableau, une fois installé avec la fonction
+`installerMedias` d'Apps Script et son gid mis dans `config.js`, ligne `medias:`). Une ligne par enregistrement :
+`id` (`yt:` + identifiant YouTube, `libsyn:` + numéro d'épisode, ou un code libre), `date` (`AAAA-MM-JJ`, `AAAA-MM` ou `AAAA`),
+`titre`, `type` (vidéo, podcast…), `source`, `evenement`, `duree` (`34:40`), `langue`, `intervenants` (les autres
+personnes), `url`, `notes`, `masquer`. Une vidéo YouTube s'affiche avec sa vignette ; le lecteur ne se charge qu'au clic
+(sans cookies). La vignette est lue dans `medias/<identifiant>.jpg` si elle y est, sinon chez YouTube.
+
 ## Lancer la collecte à la main
 
 ```sh
