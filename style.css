@@ -93,7 +93,6 @@ h2 {
 .onglets a[aria-current="page"] { color: var(--encre); border-color: var(--accent); }
 .onglets a:not([aria-current]) { color: var(--encre-2); font-weight: 400; }
 .onglets a:not([aria-current]):hover { color: var(--accent); }
-.onglets .bientot { color: var(--encre-3); font-weight: 400; cursor: default; }
 
 .intro { max-width: 720px; margin: 0 0 20px; color: var(--encre-2); }
 .cadre {
