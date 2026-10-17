@@ -9,6 +9,8 @@
   const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   let toutes = [];
   let tri = { cle: "date", sens: -1 };
+  let villeChoisie = null;  // filtre posé en cliquant sur la carte
+  let lieux = {};           // lieu tel qu'écrit dans le tableau → { ville, pays, lat, lon } (donnees/lieux.csv)
 
   function telecharger() {
     const copie = () => fetch("donnees/conferences.csv", { cache: "no-cache" }).then((r) => {
@@ -26,12 +28,18 @@
       .catch(copie);
   }
 
-  telecharger()
-    .then((texte) => {
+  const lieuxCSV = fetch("donnees/lieux.csv", { cache: "no-cache" }).then((r) => (r.ok ? r.text() : "")).catch(() => "");
+
+  Promise.all([telecharger(), lieuxCSV])
+    .then(([texte, texteLieux]) => {
+      Papa.parse(texteLieux, { header: true, skipEmptyLines: true }).data.forEach((l) => {
+        lieux[(l.lieu || "").trim()] = { ville: l.ville || l.lieu, pays: l.pays || "", lat: parseFloat(l.lat), lon: parseFloat(l.lon) };
+      });
       toutes = Papa.parse(texte, { header: true, skipEmptyLines: true }).data
         .filter((c) => (c.id || c.titre) && !/^(oui|x|1|true|vrai)$/i.test((c.masquer || "").trim()))
         .map((c) => {
           c.type = c.type || "conférence";
+          c._ville = (lieux[(c.lieu || "").trim()] || {}).ville || (c.lieu || "").trim();
           c._texte = sansAccents([c.titre, c.congres, c.lieu, c.orateurs, c.date, c.type, c.notes].join(" "));
           return c;
         });
@@ -43,10 +51,33 @@
       if (annees.length)
         $("#intro").textContent = `${pluriel(toutes.length, "intervention")}, de ${Math.min(...annees)} à ${Math.max(...annees)}. La liste est encore incomplète.`;
       afficher();
+      dessinerCarte();
     })
     .catch((e) => {
       $("#compte").textContent = "La liste n'a pas pu être chargée (" + e.message + ").";
     });
+
+  // un point par ville, avec ses interventions (année et congrès)
+  function dessinerCarte() {
+    const parVille = {};
+    toutes.forEach((c) => {
+      if (!c._ville) return;
+      const l = lieux[(c.lieu || "").trim()] || {};
+      const v = (parVille[c._ville] = parVille[c._ville] || { ville: c._ville, pays: l.pays || "", lat: l.lat, lon: l.lon, n: 0, details: [] });
+      v.n++;
+      const ligne = `${(c.date || "").slice(0, 4)} ${c.congres || c.titre}`.trim();
+      if (!v.details.includes(ligne)) v.details.push(ligne);
+    });
+    Object.values(parVille).forEach((v) => v.details.sort());
+    FVCarte.dessiner($("#carte"), Object.values(parVille).sort((a, b) => b.n - a.n), {
+      choisie: villeChoisie,
+      surChoix: (ville) => {
+        villeChoisie = ville;
+        afficher();
+        dessinerCarte();
+      },
+    }).catch(() => ($("#carte").hidden = true));
+  }
 
   // « 2015-11-13 » → « 13 nov. 2015 » ; une année seule reste telle quelle
   function dateLisible(d) {
@@ -78,11 +109,13 @@
   function afficher() {
     const mots = sansAccents($("#recherche").value).split(/\s+/).filter(Boolean);
     const type = $("#type").value;
-    const liste = toutes.filter((c) => mots.every((m) => c._texte.includes(m)) && (!type || c.type === type));
+    const liste = toutes.filter((c) => mots.every((m) => c._texte.includes(m)) && (!type || c.type === type)
+      && (!villeChoisie || c._ville === villeChoisie));
     const { cle, sens } = tri;
     const val = (c) => sansAccents(c[cle]);
     liste.sort((a, b) => (val(a) < val(b) ? -sens : val(a) > val(b) ? sens : (b.date || "").localeCompare(a.date || "")));
-    $("#compte").textContent = liste.length === toutes.length ? pluriel(toutes.length, "intervention") : `${liste.length} sur ${toutes.length}`;
+    $("#compte").textContent = (liste.length === toutes.length ? pluriel(toutes.length, "intervention") : `${liste.length} sur ${toutes.length}`)
+      + (villeChoisie ? ` · ${villeChoisie}` : "");
     corps.innerHTML = liste.length ? liste.map((c) => `
       <tr>
         <td class="annee">${dateLisible(c.date)}</td>

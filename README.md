@@ -16,6 +16,7 @@ Pages : publications, thèmes, lectures commentées (avis Faculty Opinions), coa
 | `donnees/citations.csv` | nombre de citations de chaque publication (OpenAlex), réécrit par chaque collecte |
 | `donnees/coauteurs.csv` | forme complète « Nom Prénom » des variantes de noms (`alias,nom`) : complété par la collecte, corrigeable à la main (une ligne corrigée n'est plus modifiée) ; `nom` = `-` retire de la page Coauteurs ce qui n'est pas une personne (pays, association…) |
 | `donnees/themes.csv` | les thèmes : nom, description, mots cherchés dans les titres (séparés par `;`, sans accents ni majuscules) |
+| `carte.js`, `cartes/` | carte des lieux (Europe, Belgique, hors d'Europe) et ses fonds vectoriels (Natural Earth) |
 | `config.js` | identifiant du tableau ; les quatre périodes affichées au-dessus du graphique |
 | `.github/workflows/publier.yml` | publie le site à chaque push, et lance la collecte chaque lundi |
 
@@ -74,6 +75,14 @@ communications et posters déposés dans **DIAL**, le dépôt de l'UCLouvain (su
 Colonnes : `id` (code unique, par exemple `manuel-2019-lille`), `date` (`AAAA-MM-JJ`, ou seulement `AAAA`), `titre`,
 `congres`, `lieu`, `type` (conférence, communication, poster, atelier…), `langue`, `orateurs`, `lien_info`,
 `lien_diapos`, `lien_video`, `notes`, `masquer`, `verrouille`, `sources`, `ajoute_le`.
+
+**Carte** : chaque `lieu` de l'onglet est placé sur la carte d'après `donnees/lieux.csv` (`lieu,ville,pays,lat,lon`).
+La collecte y ajoute tout seul les lieux nouveaux (recherche dans OpenStreetMap) ; un lieu introuvable est ajouté
+sans coordonnées : compléter `lat` et `lon` à la main (clic droit sur Google Maps → coordonnées). Plusieurs lieux
+peuvent pointer vers la même `ville` (« Woluwe-Saint-Lambert » → Bruxelles). Europe et zoom Belgique toujours affichés,
+petites cartes « hors d'Europe » (Amérique du Nord, Amérique du Sud, Afrique, Asie, Océanie) seulement quand un lieu
+s'y trouve. Cliquer sur un point n'affiche que les interventions de cette ville. Les fonds de carte (`cartes/`) se
+régénèrent avec `python3 outils/cartes.py` (cadrage dans ce fichier) ; le module `carte.js` servira aussi aux missions.
 
 **Diapositives** : déposer les présentations (PDF, PowerPoint ou Google Slides) dans le dossier **« presentations »**
 du Google Drive, à côté du tableau. Chaque fichier est rattaché à sa conférence d'après son nom (id, titre ou partie du

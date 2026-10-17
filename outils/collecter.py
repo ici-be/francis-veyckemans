@@ -22,6 +22,9 @@ Il écrit aussi deux fichiers que personne n'a besoin de remplir dans le tableau
   corrigées à la main, sont conservées : seules les variantes nouvelles sont ajoutées ;
 - donnees/conferences.csv : copie de l'onglet « Conférences » du tableau (exposés trouvés dans DIAL,
   le dépôt de l'UCLouvain, plus ce qui est ajouté à la main), mêmes règles que les publications ;
+- donnees/lieux.csv : position (ville, pays, latitude, longitude) de chaque lieu de conférence, pour les
+  cartes ; un lieu nouveau est cherché dans OpenStreetMap (Nominatim). Les lignes existantes, éventuellement
+  corrigées à la main, sont conservées ; un lieu introuvable est ajouté sans coordonnées, à compléter à la main ;
 - donnees/lectures.csv : pour chaque avis Faculty Opinions, l'article commenté (DOI, auteurs,
   revue, année, PMID, PDF en accès libre), d'après Crossref et OpenAlex. Les lignes existantes,
   éventuellement corrigées à la main, sont conservées : seuls les avis nouveaux sont cherchés.
@@ -56,6 +59,7 @@ CITATIONS = RACINE / "donnees" / "citations.csv"
 COAUTEURS = RACINE / "donnees" / "coauteurs.csv"
 LECTURES = RACINE / "donnees" / "lectures.csv"
 CONFERENCES = RACINE / "donnees" / "conferences.csv"
+LIEUX = RACINE / "donnees" / "lieux.csv"
 
 ORCID = "0000-0001-9670-8588"
 # OpenAlex a éclaté ses publications entre plusieurs profils d'auteur
@@ -683,6 +687,36 @@ def lire_dial(meta):
     }
 
 
+def geocoder_lieux(lieux):
+    """Ajoute à donnees/lieux.csv les lieux qui n'y sont pas encore, avec leur position d'après OpenStreetMap."""
+    lignes = []
+    if LIEUX.exists():
+        with LIEUX.open(newline="", encoding="utf-8") as f:
+            lignes = list(csv.DictReader(f))
+    connus = {l["lieu"].strip() for l in lignes}
+    nouveaux = sorted({l.strip() for l in lieux if l and l.strip()} - connus)
+    for lieu in nouveaux:
+        # « Brest (France) », « UCL Namur Site Godinne » → texte de recherche plus simple
+        requete = re.sub(r"\bUCL\b|\bSite\b|Palais des Congrès de", " ", lieu).replace("(", ", ").replace(")", "")
+        ligne = {"lieu": lieu, "ville": lieu, "pays": "", "lat": "", "lon": ""}
+        try:
+            r = get("https://nominatim.openstreetmap.org/search", params={
+                "q": re.sub(r"\s+", " ", requete).strip(" ,"), "format": "json", "limit": 1,
+                "addressdetails": 1, "accept-language": "fr",
+            }).json()
+            if r:
+                a = r[0].get("address", {})
+                ligne.update(ville=a.get("city") or a.get("town") or a.get("village") or a.get("municipality") or lieu,
+                             pays=a.get("country", ""), lat=str(round(float(r[0]["lat"]), 4)), lon=str(round(float(r[0]["lon"]), 4)))
+        except requests.RequestException:
+            pass
+        lignes.append(ligne)
+        print(f"  lieu : {lieu} → {ligne['ville']}, {ligne['pays'] or '?'}", file=sys.stderr)
+        time.sleep(1.1)  # Nominatim : une requête par seconde au plus
+    if nouveaux:
+        ecrire_csv(sorted(lignes, key=lambda l: (l["ville"], l["lieu"])), LIEUX, ["lieu", "ville", "pays", "lat", "lon"])
+
+
 def conferences(sheet_id, gid, url, cle, simulation):
     """Complète l'onglet « Conférences » (ou donnees/conferences.csv), avec les mêmes règles que les publications."""
     if sheet_id and gid:
@@ -719,10 +753,11 @@ def conferences(sheet_id, gid, url, cle, simulation):
         if nouvelles or a_completer:
             rep = envoyer(url, cle, nouvelles, a_completer, onglet="Conférences")
             print(f"Onglet Conférences : {len(rep['ajoutees'])} ajoutée(s), {len(rep['completees'])} complétée(s)", file=sys.stderr)
-        ecrire_csv(lire_tableau(sheet_id, gid, ("id", "date", "titre")), CONFERENCES, COLONNES_CONFERENCES)
+        toutes = lire_tableau(sheet_id, gid, ("id", "date", "titre"))
     else:
         toutes = sorted(existantes + nouvelles, key=lambda f: (f.get("date") or ""), reverse=True)
-        ecrire_csv(toutes, CONFERENCES, COLONNES_CONFERENCES)
+    ecrire_csv(toutes, CONFERENCES, COLONNES_CONFERENCES)
+    geocoder_lieux(f.get("lieu") for f in toutes if not oui(f.get("masquer")))
 
 
 # ---------------------------------------------------------------- tableau Google Sheets
