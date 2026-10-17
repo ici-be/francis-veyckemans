@@ -120,7 +120,7 @@ Catherine Baujard,Baujard Catherine
 Bayet B,Bayet Bénédicte
 Beck C,Beck Christiane E.
 C Beck,Beck Christiane E.
-Becke K,Becke Karin
+Becke K,Becke-Jakob Karin
 Becke Karin,Becke-Jakob Karin
 Becke-Jakob K,Becke-Jakob Karin
 Karin Becke-Jakob,Becke-Jakob Karin
@@ -216,11 +216,12 @@ Cherubini A,Cherubini Antonio
 Christensen,Christensen Michelle Icka
 Christensen MI,Christensen Michelle Icka
 Ciccarelli O,Ciccarelli Olga
-Cirenei C,Cirenei Cedric
-Clapuyt P,Clapuyt Philippe R. M.
-P h Clapuyt,Clapuyt Philippe R. M.
-P. Clapuyt,Clapuyt Philippe R. M.
-Philippe Clapuyt,Clapuyt Philippe R. M.
+Cirenei C,Cirenei Cédric
+Clapuyt P,Clapuyt Philippe
+P h Clapuyt,Clapuyt Philippe
+P. Clapuyt,Clapuyt Philippe
+Philippe Clapuyt,Clapuyt Philippe
+Clapuyt Philippe R. M.,Clapuyt Philippe
 Claus D,Claus Dominique
 D. Claus,Claus Dominique
 Clausen N,Clausen Nicola Groes
@@ -236,7 +237,7 @@ de Clety Clement S.,Clément de Clety Stephan
 de Clety S Clement,Clément de Clety Stephan
 Stephan Clément de Clety,Clément de Clety Stephan
 Clerbaux T,Clerbaux Thierry
-Clety SC,Clety Stephan Clement de
+Clety SC,Clément de Clety Stephan
 Colas AE,Colas Anne Emmanuelle
 Collard E,Collard Edith
 Constant I,Constant Isabelle
@@ -255,7 +256,8 @@ Christophe Dadure,Dadure Christophe
 Dadure C,Dadure Christophe
 Dahmani S,Dahmani Souhayl
 Souhayl Dahmani,Dahmani Souhayl
-Dalens,Dalens B
+Dalens,Dalens Bernard
+Dalens B,Dalens Bernard
 Dangelser G,Dangelser Gaétan
 Danse E,Danse Etienne M.
 Darwish AA,Darwish Ahmed A
@@ -263,9 +265,9 @@ David JS,David Jean
 Jean-Stéphane David,David Jean
 Davidson A,Davidson Andrew
 de Backer A,de Backer Antoine
-Clement S. de Clety,de Clety Clement S.
-de Clety SC,de Clety S Clement
-De Clety SC,de Clety S Clement
+Clement S. de Clety,Clément de Clety Stephan
+de Clety SC,Clément de Clety Stephan
+De Clety SC,Clément de Clety Stephan
 De Franceschi E,De Franceschi Emmanuelle
 de Graaff JC,de Graaff Jurgen C.
 Jurgen C. de Graaff,de Graaff Jurgen C.
@@ -294,8 +296,9 @@ de Queiroz Siqueira M,De Queiroz Siqueira Mathilde
 M. de Queiroz Siqueira,De Queiroz Siqueira Mathilde
 De Robertis E,De Robertis Edoardo
 de Toeuf C,de Toeuf Caroline
-De Villé A,De Ville Andree
-de Goyet J de Ville,de Ville de Goyet J
+De Villé A,De Ville Andrée
+de Goyet J de Ville,de Ville de Goyet Jean
+de Ville de Goyet J,de Ville de Goyet Jean
 de Ville de Goyet J,de Ville de Goyet Jean
 J De Ville De Goyet,de Ville de Goyet Jean
 Jean de Ville de Goyet,de Ville de Goyet Jean
@@ -304,7 +307,7 @@ Maëlle de Ville de Goyet,de Ville de Goyet Maëlle
 Debouche,Debouche Sophie
 Debouche S,Debouche Sophie
 Décary E,Décary Elizabeth
-Dekock M,Dekock Marck
+Dekock M,De Kock Marc
 Delgadillo X,Delgadillo Xavier
 Depret-Donatien V,Depret-Donatien Véronique
 Deprez PH,Deprez Pierre Henri
@@ -411,6 +414,7 @@ Goubau P,Goubau Patrick
 Gouverneur JM,Gouverneur Jean-Marie
 J H GOUVERNEUR,Gouverneur Jean-Marie
 Gras J,Gras Jeremie M.
+Gribomont BF,Gribomont Bernard François
 B.F. Gribomont,Gribomont BF
 De Groote P,Groote P De
 Grosu I,Grosu Irina
@@ -492,7 +496,8 @@ Julien-Marsollier F,Julien-Marsollier Florence
 H Jungbluth,Jungbluth Heinz
 Heinz Jungbluth,Jungbluth Heinz
 Jungbluth H,Jungbluth Heinz
-Kariman Abelin-Genevois,K. Abelin-Genevois
+Kariman Abelin-Genevois,Abelin-Genevois Kariman
+K. Abelin-Genevois,Abelin-Genevois Kariman
 Kader HA,Kader Hesham A
 Kalenga M,Kalenga Masendu
 Karlsson,Karlsson Jacob
@@ -525,8 +530,8 @@ Krane E,Krane Elliot
 Kranke P,Kranke Peter
 F Kuhn,Kuhn Fabian
 Kuhn F,Kuhn Fabian
-Frédéric Lacroix,Lacroix Frederic
-Lacroix F,Lacroix Frederic
+Frédéric Lacroix,Lacroix Frédéric
+Lacroix F,Lacroix Frédéric
 Lacrosse D,Lacrosse Dominique
 Anne Laffargue,Laffargue Anne
 Laffargue A,Laffargue Anne
@@ -828,10 +833,10 @@ Schmitz A,Schmitz Achim
 Schmitz S,Schmitz Sandra
 Antoine Schneider,Schneider Antoine Guillaume
 Schneider A,Schneider Antoine Guillaume
-J.L. Scholtes,Scholtès Jean-Louis
-Scholtes Jean-Louis,Scholtès Jean-Louis
-Scholtes JL,Scholtès Jean-Louis
-Scholtès JL,Scholtès Jean-Louis
+J.L. Scholtes,Scholtes Jean-Louis
+Scholtes Jean-Louis,Scholtes Jean-Louis
+Scholtes JL,Scholtes Jean-Louis
+Scholtès JL,Scholtes Jean-Louis
 Scordo L,Scordo Lucia
 Scquizzato T,Scquizzato Tommaso
 François Semjen,Semjen François
@@ -992,7 +997,8 @@ Wanty C,Wanty Catherine
 Waterloos H,Waterloos Hilde
 Weber F,Weber Frank
 Weiss B,Weiss Bjoern
-Wese F,Wese FX
+Wese FX,Wese François Xavier
+Wese F,Wese François Xavier
 B Weynand,Weynand Birgit
 Birgit Weynand,Weynand Birgit
 Weynand B,Weynand Birgit
