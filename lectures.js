@@ -26,7 +26,7 @@
         .map((th, i) => {
           const mots = th.mots.split(";").map((m) => sansAccents(m.trim())).filter(Boolean);
           const nom = (I18N.en && th.theme_en) || th.theme;
-          return { cle: "th-" + i, nom, mots };
+          return { cle: "th-" + i, nom, mots, couleur: `var(--th${i % 8})` };  // même couleur que sur la page Thèmes
         });
       avis.forEach((p) => {
         const c = commentes[p.id] || {};
@@ -54,7 +54,7 @@
       .filter((th) => th.n > 0);
     if (!actifs.length) return;
     barre.innerHTML = `<button type="button" class="pastille-filtre" data-theme="" aria-pressed="${themeChoisi === ""}">${echapper(t("Tous les thèmes"))} <span>${avis.length}</span></button>` +
-      actifs.map((th) => `<button type="button" class="pastille-filtre" data-theme="${th.cle}" aria-pressed="${themeChoisi === th.cle}">${echapper(th.nom)} <span>${th.n}</span></button>`).join("");
+      actifs.map((th) => `<button type="button" class="pastille-filtre" data-theme="${th.cle}" aria-pressed="${themeChoisi === th.cle}"><i class="point-theme" style="background:${th.couleur}" aria-hidden="true"></i>${echapper(th.nom)} <span>${th.n}</span></button>`).join("");
   }
 
   function afficher() {
@@ -85,7 +85,7 @@
       .map((x, i) => (i === 1 ? x : echapper(x))).join(", ");
     const badges = (p._themes || []).map((cle) => {
       const th = themes.find((x) => x.cle === cle);
-      return th ? `<span class="pastille-mini">${echapper(th.nom)}</span>` : "";
+      return th ? `<span class="pastille-mini"><i class="point-theme" style="background:${th.couleur}" aria-hidden="true"></i>${echapper(th.nom)}</span>` : "";
     }).join("");
     const liens = [
       p.lien_info && lien(p.lien_info, t("Lire l'avis")),
