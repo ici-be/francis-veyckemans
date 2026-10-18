@@ -344,12 +344,27 @@ mark {
   content: ""; position: absolute; left: 20px; top: 24px; width: 8px; height: 8px;
   border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); transition: transform .15s;
 }
+.theme[open] summary { border-bottom: 1px solid var(--trait); }
 .theme[open] summary::before { transform: rotate(45deg); }
+.theme-entete { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.theme-texte { min-width: 0; flex: 1; }
 .theme summary h2 { display: inline; }
 .theme-compte { margin-left: 10px; color: var(--encre-3); font-size: 14px; }
 .theme summary p { margin: 4px 0 0; color: var(--encre-2); font-size: 15px; }
+.theme-frise { flex: none; width: 420px; height: 34px; display: block; align-self: flex-end; margin-bottom: -16px; }
+.theme-frise .barre { fill: var(--barre); pointer-events: none; opacity: .9; }
+.theme-frise .barre.p0 { fill: var(--per0); }
+.theme-frise .barre.p1 { fill: var(--per1); }
+.theme-frise .barre.p2 { fill: var(--per2); }
+.theme-frise .barre.p3 { fill: var(--per3); }
+.theme-frise .zone { fill: transparent; }
+.theme-frise .zone:hover + .barre { opacity: 1; filter: brightness(.85); }
+@media (max-width: 820px) {
+  .theme-frise { display: none; }
+}
 .fiches { list-style: none; margin: 0; padding: 0 18px 8px; }
 .fiche { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--trait); }
+.fiche:first-child { border-top: 0; }
 .fiche-annee { font-weight: 600; color: var(--encre-2); font-variant-numeric: tabular-nums; }
 .fiche .revue { margin: 3px 0 8px; font-size: 14px; color: var(--encre-2); }
 .fiche .revue i { color: var(--encre); }
