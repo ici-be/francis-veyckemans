@@ -300,16 +300,18 @@ window.I18N = (function () {
     return location.pathname + (s ? "?" + s : "") + location.hash;
   }
 
-  // thème clair / sombre : mémorisé dans localStorage, sinon préférence du système
+  // thème clair / sombre : mémorisé dans localStorage, sinon clair (la préférence du système est ignorée)
   function themeActuel() {
     const f = document.documentElement.getAttribute("data-theme");
     if (f === "dark" || f === "light") return f;
     return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
+  let pref = "light";
   try {
-    const pref = localStorage.getItem("fv-theme");
-    if (pref === "dark" || pref === "light") document.documentElement.setAttribute("data-theme", pref);
+    const memo = localStorage.getItem("fv-theme");
+    if (memo === "dark") pref = memo;
   } catch (e) {}
+  document.documentElement.setAttribute("data-theme", pref);
 
   // ---------------------------------------------------------------- pages
 
