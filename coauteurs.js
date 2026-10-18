@@ -30,7 +30,11 @@
 
   function afficher() {
     const mots = sansAccents($("#recherche").value).split(/\s+/).filter(Boolean);
-    const tous = $("#tous").checked;
+    // pendant une recherche, tous les coauteurs sont montrés : case cochée et grisée
+    const caseTous = $("#tous");
+    caseTous.disabled = mots.length > 0;
+    caseTous.checked = caseTous.disabled || choixTous;
+    const tous = caseTous.checked;
     const liste = gens.filter((g) => (tous || g.n > 1) && mots.every((m) => sansAccents(g.nom).includes(m)));
     const { cle, sens } = tri;
     const val = (g) => (cle === "nom" ? sansAccents(g.nom) : g[cle]);
@@ -52,7 +56,8 @@
 
   let attente;
   $("#recherche").addEventListener("input", () => { clearTimeout(attente); attente = setTimeout(afficher, 150); });
-  $("#tous").addEventListener("change", afficher);
+  let choixTous = $("#tous").checked;  // choix de l'utilisateur, rétabli quand la recherche est vidée
+  $("#tous").addEventListener("change", () => { choixTous = $("#tous").checked; afficher(); });
   document.querySelectorAll("#tableau th[data-tri] button").forEach((b) =>
     b.addEventListener("click", () => {
       const cle = b.parentElement.dataset.tri;

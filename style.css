@@ -188,6 +188,7 @@ h2 {
 .champ input:focus, .champ select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 .case { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--encre-2); min-height: 40px; }
 .case input { accent-color: var(--accent); width: 16px; height: 16px; }
+.case:has(input:disabled) { opacity: .55; }
 .case .nb { color: var(--encre-3); font-size: 13px; margin-left: -4px; }
 .compte { color: var(--encre-3); font-size: 14px; margin: 8px 0 10px; }
 .compte-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0 10px; }
