@@ -284,6 +284,10 @@ mark {
 }
 
 /* panneau « Résumé » (Abstract) */
+.tableau tbody tr:has(+ tr.resume-tr) td { border-bottom: 0; padding-bottom: 4px; }
+.tableau tbody tr.resume-tr:hover { background: none; }
+.tableau tbody tr.resume-tr td { padding: 0 14px 14px; }
+.tableau tbody tr.resume-tr .resume-panneau { margin-top: 0; }
 .resume-panneau {
   margin-top: 10px; padding: 12px 14px; border-radius: 8px;
   background: var(--fond); border: 1px solid var(--trait);
@@ -583,6 +587,9 @@ main.largeur { padding-bottom: 72px; }  /* plus précis que .largeur, qui remet 
   td.titre-cell, td.revue, td.liens-cell { grid-column: 1 / -1; }
   td.citations { grid-column: 1 / -1; text-align: left; }
   td.citations .unite { display: inline; }
+  .tableau tbody tr:has(+ tr.resume-tr) { border-bottom: 0; padding-bottom: 0; }
+  .tableau tbody tr:has(+ tr.resume-tr) td, .tableau tbody tr.resume-tr td { padding: 0; }
+  .tableau tbody tr.resume-tr { display: block; padding-top: 10px; }
   .tableau.coauteurs tr { grid-template-columns: 1fr auto; }
   .tableau.coauteurs td { padding: 0; }
   .tableau.coauteurs td.periode-cell { grid-column: 1 / -1; }

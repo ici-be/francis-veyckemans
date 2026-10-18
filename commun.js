@@ -232,7 +232,22 @@ window.FV = (function () {
       const b = e.target.closest(".resumer, .citer, .format, .copier");
       if (!b) return;
       if (b.classList.contains("resumer")) {
-        const lieu = b.closest(".cite-ici") || b.closest("tr, li").querySelector(".cite-ici");
+        const tr = b.closest("tr");
+        if (tr) {
+          const suiv = tr.nextElementSibling;
+          const ouvert = suiv && suiv.classList.contains("resume-tr") ? suiv : null;
+          if (ouvert) ouvert.remove();
+          b.setAttribute("aria-expanded", String(!ouvert));
+          if (!ouvert) {
+            const p = trouver(b.dataset.id);
+            if (p) {
+              const nbCols = tr.children.length || 6;
+              tr.insertAdjacentHTML("afterend", `<tr class="resume-tr"><td colspan="${nbCols}">${panneauResume(p)}</td></tr>`);
+            }
+          }
+          return;
+        }
+        const lieu = b.closest(".cite-ici") || b.closest("li").querySelector(".cite-ici");
         const ouvert = lieu.querySelector(".resume-panneau");
         if (ouvert) ouvert.remove();
         b.setAttribute("aria-expanded", String(!ouvert));
