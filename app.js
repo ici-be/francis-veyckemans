@@ -23,6 +23,7 @@
     .then((liste) => {
       toutes = liste.filter((p) => !estAvis(p));  // les avis Faculty Opinions ont leur page
       remplirTypes();
+      $("#nb-pdf").textContent = `(${toutes.filter((p) => p.lien_pdf).length})`;
       lireAdresse();
       dessinerPeriodes();
       afficher();
