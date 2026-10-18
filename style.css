@@ -23,7 +23,8 @@
   --per0: #4f9a9c; --per1: #d08a3e; --per2: #5f86bd; --per3: #c0606f;
   /* une couleur par thème, pages Thèmes et Coauteurs (gris : aucun thème) */
   --th0: #3f8f91; --th1: #5f86bd; --th2: #8466b0; --th3: #d08a3e; --th4: #c4566a; --th5: #5f9a4a; --th6: #a8873a; --th7: #2f4f7a; --th-x: #bdb8ae;
-  color-scheme: light;
+  /* « only » : empêche les navigateurs mobiles d'assombrir d'office le thème clair */
+  color-scheme: only light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
