@@ -314,12 +314,21 @@ window.I18N = (function () {
     if (f === "dark" || f === "light") return f;
     return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
-  let pref = "light";
-  try {
-    const memo = localStorage.getItem("fv-theme");
-    if (memo === "dark") pref = memo;
-  } catch (e) {}
-  document.documentElement.setAttribute("data-theme", pref);
+  let majBoutonTheme = () => {};
+  function appliquerTheme() {
+    let pref = "light";
+    try {
+      const memo = localStorage.getItem("fv-theme");
+      if (memo === "dark") pref = memo;
+    } catch (e) {}
+    document.documentElement.setAttribute("data-theme", pref);
+    majBoutonTheme();
+  }
+  appliquerTheme();
+  // page réaffichée par le bouton retour (cache du navigateur, fréquent sur Firefox mobile) ou thème changé
+  // dans un autre onglet : le script ne repasse pas, on réapplique le choix mémorisé
+  addEventListener("pageshow", (e) => e.persisted && appliquerTheme());
+  addEventListener("storage", (e) => e.key === "fv-theme" && appliquerTheme());
 
   // ---------------------------------------------------------------- pages
 
@@ -361,7 +370,7 @@ window.I18N = (function () {
       const btnTheme = document.createElement("button");
       btnTheme.type = "button";
       btnTheme.className = "outil-theme";
-      const majBoutonTheme = () => {
+      majBoutonTheme = () => {
         const sombre = themeActuel() === "dark";
         const label = sombre ? t("Thème clair") : t("Thème sombre");
         btnTheme.title = label;
