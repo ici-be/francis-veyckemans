@@ -32,6 +32,15 @@
   <main class="largeur page">
     <h1>Coauteurs</h1>
     <p class="intro" id="intro">Chargement…</p>
+    <div class="bandeau-coauteurs" id="bandeau" hidden>
+      <div class="choix" id="themes-choix" role="group" aria-label="Thèmes"></div>
+      <details class="liens-coauteurs" id="liens">
+        <summary>Liens entre coauteurs</summary>
+        <div class="cadre arcs-cadre" id="arcs"></div>
+        <p class="aide">Les 40 coauteurs les plus fréquents, placés selon l'année de leur première publication commune. Un arc relie deux coauteurs d'au moins trois publications ensemble ; la couleur est celle du thème le plus fréquent (gris : aucun). Un clic sur un point affiche ses coauteurs dans le tableau.</p>
+        <div class="carte-bulle arcs-bulle" id="arcs-bulle" role="status" hidden></div>
+      </details>
+    </div>
     <section class="filtres" aria-label="Filtres">
       <label class="champ recherche">
         <span>Rechercher</span>
@@ -39,7 +48,7 @@
       </label>
       <label class="case"><input type="checkbox" id="tous"> afficher aussi les coauteurs d'une seule publication</label>
     </section>
-    <p class="compte" id="compte" aria-live="polite"></p>
+    <p class="compte-ligne" aria-live="polite"><span class="compte" id="compte"></span><span class="compte" id="filtre-actif"></span></p>
     <div class="tableau-cadre">
       <table class="tableau coauteurs" id="tableau">
         <thead>

@@ -87,6 +87,17 @@ window.FV = (function () {
   // coauteurs de la liste (noms complets), sans lui-même ni les groupes d'étude
   const coauteurs = (p) => p._noms.filter((n) => !estLui(n) && !COLLECTIF.test(n));
 
+  // thèmes de donnees/themes.csv ; une publication relève d'un thème si son titre contient l'un de ses mots
+  function lireThemes(texte) {
+    return lireCSV(texte).filter((th) => th.theme && th.mots).map((th) => ({
+      // site en anglais : colonnes theme_en et description_en, sinon le texte français
+      nom: (I18N.en && th.theme_en) || th.theme,
+      description: I18N.en ? th.description_en || (th.theme_en ? "" : th.description) : th.description,
+      mots: th.mots.split(";").map((m) => sansAccents(m.trim())).filter(Boolean),
+    }));
+  }
+  const dansTheme = (p, th) => th.mots.some((m) => sansAccents(p.titre).includes(m));
+
   // ---------------------------------------------------------------- affichage commun
 
   const FAMILLES = [
@@ -496,5 +507,5 @@ window.FV = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialiserRechercheGlobale);
   else initialiserRechercheGlobale();
 
-  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, famille, revueHTML, citationsHTML, liensHTML, surligner, activerCiter, exporter };
+  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, lireThemes, dansTheme, famille, revueHTML, citationsHTML, liensHTML, surligner, activerCiter, exporter };
 })();

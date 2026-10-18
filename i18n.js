@@ -110,6 +110,14 @@ window.I18N = (function () {
     "{n} coauteurs, dont {f} pour au moins deux publications. Un nom mène à la liste des publications communes.":
       "{n} co-authors, {f} of them on at least two publications. A name leads to the list of joint publications.",
     "Aucun coauteur ne correspond.": "No co-author matches.",
+    "Liens entre coauteurs": "Links between co-authors",
+    "Les 40 coauteurs les plus fréquents, placés selon l'année de leur première publication commune. Un arc relie deux coauteurs d'au moins trois publications ensemble ; la couleur est celle du thème le plus fréquent (gris : aucun). Un clic sur un point affiche ses coauteurs dans le tableau.":
+      "The 40 most frequent co-authors, placed by the year of their first joint publication. An arc links two co-authors of at least three publications together; the colour is that of their most frequent theme (grey: none). Clicking a point shows their co-authors in the table.",
+    "Liens entre les principaux coauteurs": "Links between the main co-authors",
+    "thème : {t}": "theme: {t}",
+    "coauteurs de {nom}": "co-authors of {nom}",
+    "effacer": "clear",
+    "Cliquer pour voir ses coauteurs.": "Click to see their co-authors.",
 
     // conférences et carte
     "Lieux des conférences": "Presentation venues",

@@ -9,18 +9,12 @@
   Promise.all([FV.charger(), fetch("donnees/themes.csv", { cache: "no-cache" }).then((r) => r.text())])
     .then(([liste, texte]) => {
       toutes = liste.filter((p) => !estAvis(p));
-      const themes = Papa.parse(texte, { header: true, skipEmptyLines: true }).data
-        .filter((th) => th.theme && th.mots)
-        .map((th, i) => {
-          const mots = th.mots.split(";").map((m) => sansAccents(m.trim())).filter(Boolean);
-          const publications = toutes
-            .filter((p) => mots.some((m) => sansAccents(p.titre).includes(m)))
-            .sort((a, b) => (a._annee || 9999) - (b._annee || 9999) || sansAccents(a.titre).localeCompare(sansAccents(b.titre)));
-          // site en anglais : colonnes theme_en et description_en, sinon le texte français
-          const nom = (I18N.en && th.theme_en) || th.theme;
-          const description = I18N.en ? th.description_en || (th.theme_en ? "" : th.description) : th.description;
-          return { nom, description, ancre: "theme-" + (i + 1), publications };
-        });
+      const themes = FV.lireThemes(texte).map((th, i) => {
+        const publications = toutes
+          .filter((p) => FV.dansTheme(p, th))
+          .sort((a, b) => (a._annee || 9999) - (b._annee || 9999) || sansAccents(a.titre).localeCompare(sansAccents(b.titre)));
+        return { nom: th.nom, description: th.description, ancre: "theme-" + (i + 1), publications };
+      });
       afficher(themes);
     })
     .catch((e) => {
@@ -39,9 +33,6 @@
     </li>`;
   }
 
-  // Couleur associée au thème (harmonie avec les 4 couleurs --per0 à --per3)
-  const COULEURS_THEMES = [0, 0, 2, 1, 1, 0, 2, 3];
-
   function friseHTML(publications, min, max, c) {
     if (!min || !max || max < min) return "";
     const compte = {};
@@ -55,7 +46,7 @@
       const r = Math.min(2, larg / 2, h);
       svg += `<rect class="zone" data-annee="${a}" data-n="${v}" x="${x.toFixed(1)}" y="0" width="${pas.toFixed(1)}" height="${H}"/>`;
       if (v) {
-        svg += `<path class="barre p${c}" d="M${(x + 1).toFixed(1)},${H} v${-(h - r).toFixed(1)} q0,${-r.toFixed(1)} ${r.toFixed(1)},${-r.toFixed(1)} h${(larg - 2 * r).toFixed(1)} q${r.toFixed(1)},0 ${r.toFixed(1)},${r.toFixed(1)} v${(h - r).toFixed(1)} z"/>`;
+        svg += `<path class="barre th${c}" d="M${(x + 1).toFixed(1)},${H} v${-(h - r).toFixed(1)} q0,${-r.toFixed(1)} ${r.toFixed(1)},${-r.toFixed(1)} h${(larg - 2 * r).toFixed(1)} q${r.toFixed(1)},0 ${r.toFixed(1)},${r.toFixed(1)} v${(h - r).toFixed(1)} z"/>`;
       } else {
         svg += `<g></g>`;
       }
@@ -69,12 +60,12 @@
     const minAnnee = toutesAnnees.length ? Math.min(...toutesAnnees) : 1985;
     const maxAnnee = toutesAnnees.length ? Math.max(...toutesAnnees) : 2026;
 
-    $("#sommaire").innerHTML = themes.map((th) =>
-      `<a href="#${th.ancre}">${echapper(th.nom)} <span>${th.publications.length}</span></a>`).join("");
+    $("#sommaire").innerHTML = themes.map((th, i) =>
+      `<a href="#${th.ancre}"><i class="point-theme" style="background:var(--th${i % 8})" aria-hidden="true"></i>${echapper(th.nom)} <span>${th.publications.length}</span></a>`).join("");
     $("#themes").innerHTML = themes.map((th, i) => {
       const annees = th.publications.map((p) => p._annee).filter(Boolean);
       const periode = annees.length ? `${Math.min(...annees)} – ${Math.max(...annees)}` : "";
-      const c = COULEURS_THEMES[i % COULEURS_THEMES.length];
+      const c = i % 8;  // même couleur que sur la page Coauteurs (--th0 à --th7)
       return `<details class="theme cadre" id="${th.ancre}">
         <summary>
           <div class="theme-entete">
