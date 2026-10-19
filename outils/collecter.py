@@ -336,14 +336,18 @@ def livres():
     for rec in ET.fromstring(xml).iter():
         if rec.tag.endswith("}record") and rec.get("format") == "UNIMARC":
             notices.append(lire_unimarc(rec, "BnF"))
-    roles = get(f"https://www.idref.fr/services/biblio/{IDREF}.json").json()["sudoc"]["result"]["role"]
-    for role in roles if isinstance(roles, list) else [roles]:
-        if role.get("roleName") not in ROLES_AUTEUR:
-            continue  # pas les thèses dont il était directeur
-        docs = role["doc"] if isinstance(role["doc"], list) else [role["doc"]]
-        for d in docs:
-            if d.get("referentiel") == "sudoc":
-                notices.append(lire_unimarc(ET.fromstring(get(f"https://www.sudoc.fr/{d['ppn']}.xml").content), "SUDOC"))
+    # le SUDOC est parfois injoignable depuis GitHub : on garde alors les notices de la BnF
+    try:
+        roles = get(f"https://www.idref.fr/services/biblio/{IDREF}.json").json()["sudoc"]["result"]["role"]
+        for role in roles if isinstance(roles, list) else [roles]:
+            if role.get("roleName") not in ROLES_AUTEUR:
+                continue  # pas les thèses dont il était directeur
+            docs = role["doc"] if isinstance(role["doc"], list) else [role["doc"]]
+            for d in docs:
+                if d.get("referentiel") == "sudoc":
+                    notices.append(lire_unimarc(ET.fromstring(get(f"https://www.sudoc.fr/{d['ppn']}.xml").content), "SUDOC"))
+    except requests.RequestException as e:
+        print(f"SUDOC injoignable, ignoré cette fois : {e}", file=sys.stderr)
     resultats, par_isbn = [], {}
     for n in notices:
         if not n:
