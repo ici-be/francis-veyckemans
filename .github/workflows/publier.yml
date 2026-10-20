@@ -2,6 +2,8 @@
 # - à chaque « git push » sur main : publie seulement
 # - chaque lundi : cherche les nouvelles publications (PubMed, OpenAlex, ORCID, BnF, SUDOC), les envoie au
 #   tableau Google Sheets et garde une copie du tableau dans donnees/publications.csv
+#   (la collecte s'arrête si une colonne ou beaucoup de lignes ont disparu du tableau depuis la copie ;
+#   si c'est voulu, la relancer à la main en cochant « accepter les suppressions »)
 # - à la demande : onglet Actions → Publier → Run workflow
 # Les corrections faites dans le tableau sont visibles tout de suite : le site lit le tableau en direct.
 # Secrets nécessaires (Settings → Secrets and variables → Actions) : ARCHIVES_URL et ARCHIVES_CLE.
@@ -12,6 +14,11 @@ on:
   schedule:
     - cron: '23 5 * * 1'
   workflow_dispatch:
+    inputs:
+      accepter_suppressions:
+        description: Accepter les colonnes ou lignes supprimées du tableau depuis la dernière copie
+        type: boolean
+        default: false
 permissions:
   contents: write
   pages: write
@@ -34,6 +41,7 @@ jobs:
         env:
           ARCHIVES_URL: ${{ secrets.ARCHIVES_URL }}
           ARCHIVES_CLE: ${{ secrets.ARCHIVES_CLE }}
+          ACCEPTER_SUPPRESSIONS: ${{ inputs.accepter_suppressions && '1' || '' }}
       - name: Enregistrer les nouveautés
         run: |
           git add donnees/publications.csv donnees/citations.csv donnees/coauteurs.csv donnees/lectures.csv donnees/conferences.csv donnees/lieux.csv donnees/medias.csv donnees/liens.csv medias

@@ -17,7 +17,7 @@
     return fetch(`https://docs.google.com/spreadsheets/d/${CONF.tableau}/export?format=csv&gid=${CONF.medias}&t=${Date.now()}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("erreur " + r.status))))
       .then((texte) => {
-        if (!/^id,/.test(texte)) throw new Error("onglet illisible");
+        if (!FV.enTeteComplet(texte, ["id", "date", "titre", "type", "source", "evenement", "duree", "langue", "intervenants", "url", "notes", "masquer"])) throw new Error("onglet abîmé");
         return texte;
       })
       .catch(copie);

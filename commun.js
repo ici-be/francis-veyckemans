@@ -13,6 +13,12 @@ window.FV = (function () {
   const COLLECTIF = /group|network|collaborat|investigator|consortium|society|committee|team|study/i;
   const lireCSV = (texte) => Papa.parse(texte || "", { header: true, skipEmptyLines: true }).data;
   const pluriel = I18N.pluriel;
+  // un onglet du tableau dont la ligne d'en-tête a perdu une de ces colonnes (renommée, supprimée) est abîmé :
+  // la page prend alors la copie du dépôt
+  const enTeteComplet = (texte, colonnes) => {
+    const entete = (Papa.parse(texte || "", { preview: 1 }).data[0] || []).map((c) => c.trim());
+    return colonnes.every((c) => entete.includes(c));
+  };
 
   // ---------------------------------------------------------------- chargement
 
@@ -31,7 +37,8 @@ window.FV = (function () {
         return r.text();
       })
       .then((texte) => {
-        if (!/^id,/.test(texte)) throw new Error("tableau illisible");
+        if (!enTeteComplet(texte, ["id", "annee", "titre", "auteurs", "revue", "volume", "numero", "pages", "type",
+          "doi", "pmid", "lien_info", "lien_pdf", "notes", "masquer"])) throw new Error("tableau abîmé");
         if ($("#maj")) $("#maj").textContent = t("en direct du tableau");
         return texte;
       })
@@ -507,5 +514,5 @@ window.FV = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialiserRechercheGlobale);
   else initialiserRechercheGlobale();
 
-  return { $, sansAccents, echapper, estLui, estAvis, pluriel, charger, coauteurs, lireThemes, dansTheme, famille, revueHTML, citationsHTML, liensHTML, surligner, activerCiter, exporter };
+  return { $, sansAccents, echapper, estLui, estAvis, pluriel, enTeteComplet, charger, coauteurs, lireThemes, dansTheme, famille, revueHTML, citationsHTML, liensHTML, surligner, activerCiter, exporter };
 })();

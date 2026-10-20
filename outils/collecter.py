@@ -888,7 +888,7 @@ def geocoder_lieux(lieux):
 def conferences(sheet_id, gid, url, cle, simulation):
     """Complète l'onglet « Conférences » (ou donnees/conferences.csv), avec les mêmes règles que les publications."""
     if sheet_id and gid:
-        existantes = lire_tableau(sheet_id, gid, ("id", "date", "titre"))
+        existantes = lire_tableau(sheet_id, gid, ("id", "date", "titre"), CONFERENCES)
     elif CONFERENCES.exists():
         with CONFERENCES.open(newline="", encoding="utf-8") as f:
             existantes = list(csv.DictReader(f))
@@ -921,7 +921,7 @@ def conferences(sheet_id, gid, url, cle, simulation):
         if nouvelles or a_completer:
             rep = envoyer(url, cle, nouvelles, a_completer, onglet="Conférences")
             print(f"Onglet Conférences : {len(rep['ajoutees'])} ajoutée(s), {len(rep['completees'])} complétée(s)", file=sys.stderr)
-        toutes = lire_tableau(sheet_id, gid, ("id", "date", "titre"))
+        toutes = lire_tableau(sheet_id, gid, ("id", "date", "titre"), CONFERENCES)
     else:
         toutes = sorted(existantes + nouvelles, key=lambda f: (f.get("date") or ""), reverse=True)
     ecrire_csv(toutes, CONFERENCES, COLONNES_CONFERENCES)
@@ -952,7 +952,7 @@ def copie_onglet(sheet_id, cle, fichier):
     """Copie de secours d'un onglet rempli à la main (Médias, Liens) dans donnees/."""
     gid = id_onglet(cle)
     if sheet_id and gid:
-        lignes = lire_tableau(sheet_id, gid, ("id",))
+        lignes = lire_tableau(sheet_id, gid, ("id",), fichier)
         if lignes:
             ecrire_csv(lignes, fichier, list(lignes[0].keys()))
 
@@ -961,7 +961,7 @@ def copie_medias(sheet_id):
     """Copie de secours de l'onglet « Médias » (rempli à la main) dans donnees/medias.csv, et vignettes des vidéos."""
     gid = id_onglet_medias()
     if sheet_id and gid:
-        lignes = lire_tableau(sheet_id, gid, ("id", "titre"))
+        lignes = lire_tableau(sheet_id, gid, ("id", "titre"), MEDIAS)
         if lignes:
             ecrire_csv(lignes, MEDIAS, list(lignes[0].keys()))
     elif MEDIAS.exists():
@@ -994,15 +994,35 @@ def id_tableau():
     return m.group(1) if m else ""
 
 
-def lire_tableau(sheet_id, gid=0, obligatoires=("id", "titre", "doi", "pmid")):
+def lire_tableau(sheet_id, gid=0, obligatoires=("id", "titre", "doi", "pmid"), copie=FICHIER):
+    """Lit un onglet du tableau. S'arrête, sans rien écraser, si une colonne de la copie du dépôt a disparu
+    ou si beaucoup de lignes ont disparu depuis cette copie : fausse manipulation probable dans le tableau.
+    ACCEPTER_SUPPRESSIONS=1 accepte ces changements quand ils sont voulus."""
     r = get(f"https://docs.google.com/spreadsheets/d/{sheet_id}/export", params={"format": "csv", "gid": gid})
     r.encoding = "utf-8"
     lecteur = csv.DictReader(io.StringIO(r.text))  # pas splitlines : une case peut contenir un retour à la ligne
-    manquantes = [c for c in obligatoires if c not in (lecteur.fieldnames or [])]
+    lignes = list(lecteur)
+    entete = lecteur.fieldnames or []
+    anciennes, copiees = [], []
+    if copie and copie.exists():
+        with copie.open(newline="", encoding="utf-8") as f:
+            ancien = csv.DictReader(f)
+            anciennes, copiees = list(ancien), ancien.fieldnames or []
+    if not os.environ.get("ACCEPTER_SUPPRESSIONS"):
+        obligatoires = list(dict.fromkeys([*obligatoires, *copiees]))
+    manquantes = [c for c in obligatoires if c not in entete]
     if manquantes:
         sys.exit(f"La ligne d'en-tête du tableau est abîmée (colonnes absentes : {', '.join(manquantes)}). "
-                 f"En-tête lu : {lecteur.fieldnames}")
-    return list(lecteur)
+                 f"En-tête lu : {entete}. Rétablir l'en-tête (Fichier → Historique des versions) ; "
+                 f"si le changement est voulu, relancer avec ACCEPTER_SUPPRESSIONS=1.")
+    ids = {l.get("id") for l in lignes}
+    disparues = [l["id"] for l in anciennes if l.get("id") and l["id"] not in ids]
+    if len(disparues) > max(3, len(anciennes) // 20) and not os.environ.get("ACCEPTER_SUPPRESSIONS"):
+        sys.exit(f"{len(disparues)} ligne(s) sur {len(anciennes)} ont disparu du tableau depuis la copie "
+                 f"{copie.relative_to(RACINE)} : {', '.join(disparues[:20])}{' …' if len(disparues) > 20 else ''}. "
+                 f"Les rétablir (Fichier → Historique des versions) ; "
+                 f"si les suppressions sont voulues, relancer avec ACCEPTER_SUPPRESSIONS=1.")
+    return lignes
 
 
 def acces_script():
@@ -1065,6 +1085,10 @@ def main():
         url, cle = (None, None) if simulation or annexes else acces_script()
         existantes = lire_tableau(sheet_id)
         print(f"Tableau : {len(existantes)} lignes", file=sys.stderr)
+        # les autres onglets aussi, avant tout envoi : un onglet abîmé arrête la collecte dès maintenant
+        for cle, copie in (("conferences", CONFERENCES), ("medias", MEDIAS), ("liens", RACINE / "donnees" / "liens.csv")):
+            if id_onglet(cle):
+                lire_tableau(sheet_id, id_onglet(cle), ("id",), copie)
     else:
         existantes = []
         if FICHIER.exists():

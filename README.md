@@ -41,6 +41,14 @@ conservé lors des mises à jour suivantes.
 
 Ne pas renommer ni déplacer les colonnes, ni l'onglet « Publications » (il doit rester le premier).
 
+En cas de fausse manipulation (lignes effacées, colonne renommée ou supprimée) :
+- le site prend la copie du dépôt (`donnees/`) tant qu'une colonne qu'il utilise manque dans un onglet ;
+- la collecte du lundi s'arrête sans rien envoyer ni écraser si une colonne de la copie du dépôt
+  ou plus de 5 % des lignes (au moins 4) ont disparu d'un onglet ; GitHub envoie alors un e-mail d'échec ;
+- pour réparer : *Fichier → Historique des versions* dans le tableau. Si le changement est voulu :
+  *Actions → Publier → Run workflow* en cochant « accepter les suppressions »
+  (en local : `ACCEPTER_SUPPRESSIONS=1 python3 outils/collecter.py`).
+
 Colonnes : `id`, `annee`, `titre`, `auteurs` (séparés par des virgules), `revue`, `volume`,
 `numero`, `pages`, `type`, `langue`, `doi`, `pmid`, `pmcid`, `lien_info` (page de l'article),
 `lien_pdf`, `notes`, `masquer`, `verrouille`, `sources` (où l'article a été trouvé),

@@ -20,7 +20,7 @@
     return fetch(`https://docs.google.com/spreadsheets/d/${CONF.tableau}/export?format=csv&gid=${CONF.conferences}&t=${Date.now()}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("erreur " + r.status))))
       .then((texte) => {
-        if (!/^id,/.test(texte)) throw new Error("onglet illisible");
+        if (!FV.enTeteComplet(texte, ["id", "date", "titre", "congres", "lieu", "type", "langue", "orateurs", "lien_info", "lien_diapos", "lien_video", "notes", "masquer"])) throw new Error("onglet abîmé");
         if ($("#maj")) $("#maj").textContent = "— " + t("en direct du tableau");
         return texte;
       })

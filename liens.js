@@ -16,7 +16,7 @@
     return fetch(`https://docs.google.com/spreadsheets/d/${CONF.tableau}/export?format=csv&gid=${CONF.liens}&t=${Date.now()}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error("erreur " + r.status))))
       .then((texte) => {
-        if (!/^id,/.test(texte)) throw new Error("onglet illisible");
+        if (!FV.enTeteComplet(texte, ["id", "categorie", "nom", "description", "url", "langue", "masquer"])) throw new Error("onglet abîmé");
         return texte;
       })
       .catch(copie);
