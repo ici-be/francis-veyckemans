@@ -92,18 +92,29 @@ session = requests.Session()
 session.headers["User-Agent"] = "archives-francis-veyckemans (github pages)"
 
 
+# clé d'API OpenAlex (gratuite, https://openalex.org/settings/api) : sans elle, les adresses partagées
+# des serveurs de GitHub épuisent vite le quota et OpenAlex répond « 429 Too Many Requests »
+OPENALEX_CLE = os.environ.get("OPENALEX_CLE", "").strip()
+
+
 def get(url, **kw):
-    for essai in range(4):
+    if OPENALEX_CLE and url.startswith("https://api.openalex.org/"):
+        kw["params"] = {**kw.get("params", {}), "api_key": OPENALEX_CLE}
+    for essai in range(5):
+        attente = 2 * (essai + 1)
         try:
             r = session.get(url, timeout=60, **kw)
             if r.status_code == 429 or r.status_code >= 500:
+                if r.status_code == 429:  # trop de requêtes : attendre ce que le serveur demande (2 min au plus)
+                    delai = r.headers.get("Retry-After", "")
+                    attente = min(int(delai), 120) if delai.isdigit() else 15 * (essai + 1)
                 raise requests.HTTPError(r.status_code)
             r.raise_for_status()
             return r
         except (requests.RequestException, requests.HTTPError):
-            if essai == 3:
+            if essai == 4:
                 raise
-            time.sleep(2 * (essai + 1))
+            time.sleep(attente)
 
 
 def cle_titre(titre):
@@ -219,6 +230,15 @@ RESUME_CONGRES = re.compile(r"^10\.1097/0000(3643|0542|0539|7890|5176|0115550)-\
 
 
 def openalex():
+    """None si OpenAlex est injoignable : la collecte continue sans lui."""
+    try:
+        return openalex_auteurs()
+    except requests.RequestException as e:
+        print(f"OpenAlex injoignable, ignoré cette fois : {e}", file=sys.stderr)
+        return None
+
+
+def openalex_auteurs():
     resultats = []
     for auteur in OPENALEX_AUTEURS:
         page = 1  # pagination par numéro : le « cursor » exige une clé d'API
@@ -618,7 +638,11 @@ def ecrire_lectures(fiches):
             if doi:
                 a_chercher[f["id"]] = doi
             time.sleep(0.1)
-    details = details_openalex(list(set(a_chercher.values())))
+    try:
+        details = details_openalex(list(set(a_chercher.values())))
+    except requests.RequestException as e:  # réessayé la semaine prochaine
+        print(f"OpenAlex injoignable, lectures commentées non complétées : {e}", file=sys.stderr)
+        a_chercher, details = {}, {}
     for id_, doi in a_chercher.items():
         lignes[id_] = {"id": id_, "doi": doi, **details.get(doi, {})}
     with LECTURES.open("w", newline="", encoding="utf-8") as f:
@@ -1100,7 +1124,9 @@ def main():
         index.ajouter(f)
 
     # PubMed d'abord : ses métadonnées sont les plus soignées pour la médecine
-    trouvees = pubmed() + openalex() + orcid() + livres()
+    trouvees_pubmed = pubmed()
+    trouvees_openalex = openalex()
+    trouvees = trouvees_pubmed + (trouvees_openalex or []) + orcid() + livres()
     aujourdhui = datetime.date.today().isoformat()
     nouvelles, modifiees, paires = [], {}, []
     for r in trouvees:
@@ -1145,7 +1171,8 @@ def main():
         conferences(sheet_id, id_onglet_conferences(), url, cle, simulation)
         return
 
-    ecrire_citations(paires)
+    if trouvees_openalex is not None:  # sinon on garde les citations de la semaine précédente
+        ecrire_citations(paires)
     ecrire_resumes(paires)
     ecrire_coauteurs(index.fiches, trouvees)
     ecrire_lectures(index.fiches)

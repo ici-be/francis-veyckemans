@@ -6,7 +6,8 @@
 #   si c'est voulu, la relancer à la main en cochant « accepter les suppressions »)
 # - à la demande : onglet Actions → Publier → Run workflow
 # Les corrections faites dans le tableau sont visibles tout de suite : le site lit le tableau en direct.
-# Secrets nécessaires (Settings → Secrets and variables → Actions) : ARCHIVES_URL et ARCHIVES_CLE.
+# Secrets nécessaires (Settings → Secrets and variables → Actions) : ARCHIVES_URL et ARCHIVES_CLE ;
+# facultatif : OPENALEX_CLE (clé d'API OpenAlex gratuite, évite les refus « 429 » d'OpenAlex).
 name: Publier
 on:
   push:
@@ -41,6 +42,7 @@ jobs:
         env:
           ARCHIVES_URL: ${{ secrets.ARCHIVES_URL }}
           ARCHIVES_CLE: ${{ secrets.ARCHIVES_CLE }}
+          OPENALEX_CLE: ${{ secrets.OPENALEX_CLE }}
           ACCEPTER_SUPPRESSIONS: ${{ inputs.accepter_suppressions && '1' || '' }}
       - name: Enregistrer les nouveautés
         run: |
