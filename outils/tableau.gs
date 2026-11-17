@@ -81,6 +81,9 @@ function afficherCle() {
     proprietes.setProperty('CLE', cle);
   }
   Logger.log('Clé secrète : ' + cle);
+  const empreinte = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cle, Utilities.Charset.UTF_8)
+    .map((o) => ((o + 256) % 256).toString(16).padStart(2, '0')).join('').slice(0, 8);
+  Logger.log('Empreinte (à comparer avec celle du journal de GitHub en cas de « clé incorrecte ») : ' + empreinte);
 }
 
 function mettreEnForme(feuille, entete, premiere, nombre) {

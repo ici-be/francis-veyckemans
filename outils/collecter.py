@@ -44,6 +44,7 @@ Sur GitHub, l'URL et la clé viennent des secrets ARCHIVES_URL et ARCHIVES_CLE.
 import collections
 import csv
 import datetime
+import hashlib
 import io
 import json
 import os
@@ -1057,7 +1058,14 @@ def acces_script():
         url, cle = c.get("url"), c.get("cle")
     if not (url and cle):
         sys.exit("Script du tableau non configuré : python3 outils/collecter.py configurer <URL> <clé>")
-    return url, cle
+    # la clé est copiée du journal d'Apps Script : espaces, retour à la ligne ou « Clé secrète : » collés avec elle
+    uuid = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", cle, re.I)
+    return url.strip(), uuid.group(0) if uuid else cle.strip()
+
+
+def empreinte(cle):
+    """Début du SHA-256 de la clé : permet de comparer deux clés sans les afficher."""
+    return hashlib.sha256(cle.encode()).hexdigest()[:8]
 
 
 def envoyer(url, cle, ajouter, completer_, essai=False, onglet=None):
@@ -1069,7 +1077,11 @@ def envoyer(url, cle, ajouter, completer_, essai=False, onglet=None):
     r.raise_for_status()
     rep = r.json()
     if rep.get("erreur"):
-        sys.exit("Le script du tableau a refusé l'envoi : " + rep["erreur"])
+        message = "Le script du tableau a refusé l'envoi : " + rep["erreur"]
+        if "clé" in rep["erreur"]:
+            message += (f"\n  clé envoyée : {len(cle)} caractères, empreinte {empreinte(cle)}"
+                        f"\n  à comparer avec l'empreinte affichée par afficherCle dans Apps Script")
+        sys.exit(message)
     return rep
 
 
